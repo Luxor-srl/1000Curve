@@ -1,50 +1,56 @@
-# Welcome to your Expo app 👋
+# 1000curve App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Questa è un'app React Native/Expo per la gestione delle tappe e dei "cookie" della gara 1000curve.
 
-## Get started
+## Funzionalità principali
 
-1. Install dependencies
+- **Login e selezione gara**: L'utente può selezionare la gara e il proprio profilo pilota.
+- **Ricerca tappa**: Inserisci il codice della tappa per visualizzare i dettagli e la posizione.
+- **Geolocalizzazione**: L'app verifica la distanza dalla tappa e abilita il pulsante "START" solo se sei vicino.
+- **Countdown**: Premendo "START" parte un countdown di 10 secondi. Al termine viene inviata la registrazione del tempo tramite chiamata API.
+- **Cookie completati**: Pulsante sempre visibile che mostra la tabella delle tappe completate (cookie) direttamente in app.
+- **Visualizzazione tabella**: La tabella dei cookie è leggibile e responsive, ottimizzata per mobile.
 
-   ```bash
+## Struttura del progetto
+
+- `app/race.tsx`: Schermata principale della gara e gestione tappe/cookie.
+- `components/`: Componenti UI riutilizzabili.
+- `hooks/`: Hook personalizzati (es. geolocalizzazione).
+- `utils/`: Utility varie (es. calcolo distanza GPS).
+- `assets/`: Immagini e font.
+
+## API principali
+
+- `GET /CRMRaceLog?action=set&setAction=setRacerLocationTime&...`  
+  Registra il tempo di completamento tappa.
+- `GET /Racer?action=get&getAction=raceLocationDone&...`  
+  Verifica se la tappa è già stata completata.
+- `GET /Racer?action=get&getAction=getRacerLocationTimesHtml&...`  
+  Restituisce la tabella HTML dei cookie completati.
+
+## Sviluppo
+
+- Modifica la logica delle chiamate API in `app/race.tsx` secondo le specifiche del backend.
+- Per testare la geolocalizzazione, assicurati che i permessi siano abilitati sul dispositivo.
+- Per modificare lo stile della tabella, agisci sulle view e sugli stili in fondo a `race.tsx`.
+
+## Avvio progetto
+
+1. Installa le dipendenze:
+   ```sh
    npm install
    ```
-
-2. Start the app
-
-   ```bash
+2. Avvia l'app in modalità sviluppo:
+   ```sh
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+## Note
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- L'app è ottimizzata per dispositivi mobili.
+- Le chiamate API richiedono header e cookie specifici per funzionare correttamente.
+- Per problemi di autenticazione, assicurati di aver effettuato il login tramite il portale web 1000curve.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Per domande o supporto, contatta il team di sviluppo 1000curve.
