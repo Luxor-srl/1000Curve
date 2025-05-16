@@ -28,12 +28,6 @@ Questa è un'app React Native/Expo per la gestione delle tappe e dei "cookie" de
 - `GET /Racer?action=get&getAction=getRacerLocationTimesHtml&...`  
   Restituisce la tabella HTML dei cookie completati.
 
-## Sviluppo
-
-- Modifica la logica delle chiamate API in `app/race.tsx` secondo le specifiche del backend.
-- Per testare la geolocalizzazione, assicurati che i permessi siano abilitati sul dispositivo.
-- Per modificare lo stile della tabella, agisci sulle view e sugli stili in fondo a `race.tsx`.
-
 ## Avvio progetto
 
 1. Installa le dipendenze:
@@ -47,10 +41,7 @@ Questa è un'app React Native/Expo per la gestione delle tappe e dei "cookie" de
 
 ## Note
 
-- L'app è ottimizzata per dispositivi mobili.
+
 - Le chiamate API richiedono header e cookie specifici per funzionare correttamente.
-- Per problemi di autenticazione, assicurati di aver effettuato il login tramite il portale web 1000curve.
 
 ---
-
-Per domande o supporto, contatta il team di sviluppo 1000curve.
