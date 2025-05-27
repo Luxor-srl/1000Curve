@@ -5,62 +5,151 @@ import { useLiveLocation } from '@/hooks/useLiveLocation';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Button, StyleSheet, TextInput, View } from 'react-native';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [todayRace, setTodayRace] = useState<any>(null);
+  const [loadingRace, setLoadingRace] = useState(true);
   const router = useRouter();
   const { location, enabled, errorMsg } = useLiveLocation();
   const iconColor = useThemeColor({}, 'tint');
+
+  // Recupera la gara di oggi all'avvio
+  React.useEffect(() => {
+    const fetchTodayRace = async () => {
+      setLoadingRace(true);
+      const headers = {
+        'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+      };
+      const params = new URLSearchParams({
+        action: 'get',
+        getAction: 'getRaces',
+      });
+      const url = `https://crm.1000curve.com/Race?${params.toString()}`;
+      try {
+        const res = await fetch(url, { method: 'GET', headers });
+        const data = await res.json();
+        if (data && Array.isArray(data.races)) {
+          // Logga tutte le tappe con le date di inizio
+          console.log('Lista tappe e date di inizio:');
+          data.races.forEach((race: any) => {
+            console.log(`- ${race.name} (${race.slug}): ${race.startDateDisplayTimestamp}`);
+          });
+          // Trova la gara di oggi
+          // Cerca la gara che ha la data di inizio esattamente oggi (ignorando l'orario)
+          const today = new Date();
+          const found = data.races.find((race: any) => {
+            const start = new Date(race.startDateGmtDate);
+            return (
+              start.getFullYear() === today.getFullYear() &&
+              start.getMonth() === today.getMonth() &&
+              start.getDate() === today.getDate()
+            );
+          });
+          setTodayRace(found || null);
+        } else {
+          setTodayRace(null);
+        }
+      } catch (e) {
+        setTodayRace(null);
+      }
+      setLoadingRace(false);
+    };
+    fetchTodayRace();
+  }, []);
 
   const handleLogin = async () => {
     if (!enabled) {
       Alert.alert('Geolocalizzazione richiesta', 'Attiva la geolocalizzazione per effettuare il login.');
       return;
     }
-    // Qualunque cosa venga inserita, restituisce il JSON richiesto
-    const result = {
-      racerfullname: 'Mirco Ceccarini',
-      racerid: '1059',
-      racerclientid: 'zCqIBwZVVHqaeswAlspefYZoKCLucN',
-      raceslug: '1000curve-app',
-    };
+    if (!todayRace) {
+      Alert.alert('Errore', 'Nessuna gara disponibile oggi.');
+      return;
+    }
+    const email = username;
+    const number = password;
+    const raceSlug = todayRace.slug;
     try {
-      // Salva il JSON localmente
-      await AsyncStorage.setItem('racerData', JSON.stringify(result));
-
-      // Effettua la chiamata API (GET)
-      const params = new URLSearchParams({
-        action: 'get',
-        getAction: 'getRace',
-        slug: result.raceslug,
+      // Chiamata dummy a CRMRaceLog per inizializzare la sessione
+      try {
+        const dummyParams = new URLSearchParams({
+          action: 'get',
+          getAction: 'getRacerLocationTime',
+          racerId: '0',
+          clientId: '0',
+          raceLocationCode: 'dummy',
+        });
+        const dummyUrl = `https://crm.1000curve.com/CRMRaceLog?${dummyParams.toString()}`;
+        const dummyHeaders = {
+          'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+        };
+        await fetch(dummyUrl, { method: 'GET', headers: dummyHeaders, credentials: 'include' });
+        console.log('Chiamata dummy CRMRaceLog eseguita');
+      } catch (e) {
+        console.warn('Chiamata dummy CRMRaceLog fallita', e);
+      }
+      // 1. Chiamata a /Racer per startRaceSession
+      const paramsRacer = new URLSearchParams({
+        action: 'set',
+        setAction: 'startRaceSession',
+        email,
+        number,
+        raceSlug,
       });
-      const url = `https://crm.1000curve.com/Race?${params.toString()}`;
+      const urlRacer = `https://crm.1000curve.com/Racer?${paramsRacer.toString()}`;
       const headers = {
         'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
       };
-      console.log('Chiamata API:', { url, method: 'GET', headers });
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
-      let data;
-      let text = await response.text();
-      console.log('Risposta API (raw):', text);
+      console.log('Chiamata API /Racer:', { urlRacer, method: 'GET', headers });
+      const responseRacer = await fetch(urlRacer, { method: 'GET', headers });
+      let textRacer = await responseRacer.text();
+      let dataRacer;
       try {
-        data = text ? JSON.parse(text) : null;
+        dataRacer = textRacer ? JSON.parse(textRacer) : null;
       } catch (parseError) {
-        console.error('Errore di parsing JSON:', parseError, 'Risposta ricevuta:', text);
-        data = { error: 'Risposta non in formato JSON', raw: text };
+        console.error('Errore di parsing JSON /Racer:', parseError, 'Risposta ricevuta:', textRacer);
+        dataRacer = { error: 'Risposta non in formato JSON', raw: textRacer };
       }
-      console.log('Risposta API (parsed):', data);
+      if (!dataRacer || !dataRacer.id || !dataRacer.clientId) {
+        Alert.alert('Errore', 'Impossibile avviare la sessione di gara.');
+        return;
+      }
+      // Salva i dati del racer per uso futuro
+      const racerData = {
+        racerid: dataRacer.id,
+        number: dataRacer.number,
+        racerclientid: dataRacer.clientId,
+        raceslug: raceSlug,
+        email,
+      };
+      await AsyncStorage.setItem('racerData', JSON.stringify(racerData));
+
+      // 2. Chiamata a /Race per ottenere i dati della gara
+      const paramsRace = new URLSearchParams({
+        action: 'get',
+        getAction: 'getRace',
+        slug: raceSlug,
+      });
+      const urlRace = `https://crm.1000curve.com/Race?${paramsRace.toString()}`;
+      console.log('Chiamata API /Race:', { urlRace, method: 'GET', headers });
+      const responseRace = await fetch(urlRace, { method: 'GET', headers });
+      let textRace = await responseRace.text();
+      let dataRace;
+      try {
+        dataRace = textRace ? JSON.parse(textRace) : null;
+      } catch (parseError) {
+        console.error('Errore di parsing JSON /Race:', parseError, 'Risposta ricevuta:', textRace);
+        dataRace = { error: 'Risposta non in formato JSON', raw: textRace };
+      }
       // Naviga alla pagina race passando i dati della gara come parametro
       router.replace({
         pathname: '/race',
         params: {
-          raceData: encodeURIComponent(JSON.stringify(data)),
+          raceData: encodeURIComponent(JSON.stringify(dataRace)),
         },
       });
     } catch (error) {
@@ -95,6 +184,13 @@ export default function LoginScreen() {
         </View>
         {!enabled && <ActivityIndicator size="small" color={iconColor} style={{ marginLeft: 8 }} />}
       </View>
+      {/* Campo gara di oggi */}
+      <TextInput
+        style={[styles.input, { backgroundColor: '#eee', color: '#888' }]}
+        placeholder="Gara di oggi"
+        value={loadingRace ? 'Caricamento...' : (todayRace ? todayRace.name : 'Nessuna gara oggi')}
+        editable={false}
+      />
       <TextInput
         style={styles.input}
         placeholder="Username"
