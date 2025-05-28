@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingTop: 40, // Aggiunto padding superiore per la notch
     paddingBottom: 10, // Mantenuto padding inferiore
-    height: 90, // Altezza aumentata
+    height: 115, // Altezza aumentata
   },
   sidebarIcon: {
     padding: 5,

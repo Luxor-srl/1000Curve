@@ -5,8 +5,8 @@ import { useLiveLocation } from '@/hooks/useLiveLocation';
 import { getDistanceFromLatLonInMeters } from '@/utils/geo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Button, Linking, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, Button, Dimensions, Linking, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 // @ts-ignore
 
@@ -22,6 +22,11 @@ export default function RaceScreen() {
   const [cookieTableHeaders, setCookieTableHeaders] = useState<string[] | null>(null);
   const [searchingStage, setSearchingStage] = useState(false);
   const [cookieCheckMessage, setCookieCheckMessage] = useState<string | null>(null);
+  
+  // Drawer state and animation
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const drawerAnimation = useRef(new Animated.Value(0)).current;
+  const { height: screenHeight } = Dimensions.get('window');
 
   // Recupera i dati del racer aggiornati (inclusi id, clientId, number, email)
   useEffect(() => {
@@ -194,6 +199,17 @@ export default function RaceScreen() {
     // Logica per aprire la sidebar
     console.log("Apri sidebar");
     Alert.alert("Sidebar", "Funzionalità sidebar da implementare.");
+  };
+
+  const toggleDrawer = () => {
+    const toValue = isDrawerOpen ? 0 : 1;
+    setIsDrawerOpen(!isDrawerOpen);
+    
+    Animated.timing(drawerAnimation, {
+      toValue,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
   };
 
   return (
@@ -498,6 +514,41 @@ export default function RaceScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Bottom Drawer */}
+      <Animated.View 
+        style={[
+          styles.drawer,
+          {
+            height: drawerAnimation.interpolate({
+              inputRange: [0, 1],
+              outputRange: [180, screenHeight * 0.8],
+            }),
+            bottom: drawerAnimation.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 0],
+            }),
+          }
+        ]}
+      >
+        <View style={styles.drawerContent}>
+          <TouchableOpacity 
+            style={styles.roadBookButton}
+            onPress={toggleDrawer}
+            activeOpacity={0.8}
+          >
+            <ThemedText style={styles.roadBookText}>RoadBook</ThemedText>
+          </TouchableOpacity>
+          
+          {isDrawerOpen && (
+            <View style={styles.drawerBody}>
+              <ThemedText style={styles.drawerTitle}>RoadBook</ThemedText>
+              <ThemedText style={styles.drawerSubtitle}>Contenuto del roadbook qui...</ThemedText>
+              {/* Qui puoi aggiungere il contenuto del roadbook */}
+            </View>
+          )}
+        </View>
+      </Animated.View>
     </View>
   );
 }
@@ -519,10 +570,6 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingTop: 32,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 3,
     marginBottom: 0,
     minHeight: '30%',
@@ -645,5 +692,59 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
+  },
+  drawer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#022C43',
+    borderTopLeftRadius: 60,
+    borderTopRightRadius: 60,
+    zIndex: 1000,
+  },
+  drawerContent: {
+    flex: 1,
+    width: '100%',
+    paddingTop: 40,
+    paddingHorizontal: 15,
+  },
+  roadBookButton: {
+    width: '85%',
+    height: 60,
+    borderRadius: 60,
+    backgroundColor: '#FFD700',
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
+    marginBottom: 10,
+  },
+  roadBookText: {
+    color: '#022C43',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  drawerBody: {
+    flex: 1,
+    width: '100%',
+    paddingTop: 20,
+  },
+  drawerTitle: {
+    color: '#FFD700',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  drawerSubtitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
