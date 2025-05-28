@@ -2,15 +2,15 @@ import { StyleSheet } from 'react-native';
 
 
 
-import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
-  const router = useRouter();
-  useEffect(() => {
-    router.replace('/login');
-  }, [router]);
-  return null;
+  return (
+    <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <ThemedText type="title">Home</ThemedText>
+    </ThemedView>
+  );
 }
 
 const styles = StyleSheet.create({

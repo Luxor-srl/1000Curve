@@ -1,12 +1,13 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useLiveLocation } from '@/hooks/useLiveLocation';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Button, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+// Import the necessary icons
+import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
@@ -15,6 +16,13 @@ export default function LoginScreen() {
   const [loadingRace, setLoadingRace] = useState(true);
   const router = useRouter();
   const { location, enabled, errorMsg } = useLiveLocation();
+
+  // Stampa in console le coordinate ogni volta che cambiano
+  React.useEffect(() => {
+    if (location) {
+      console.log('Coordinate attuali:', location.latitude, location.longitude);
+    }
+  }, [location]);
   const iconColor = useThemeColor({}, 'tint');
 
   // Recupera la gara di oggi all'avvio
@@ -161,51 +169,65 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>Login</ThemedText>
-      <View style={styles.geoBox}>
-        <IconSymbol
-          name={enabled ? 'paperplane.fill' : 'paperplane.fill'}
-          size={32}
-          color={enabled ? iconColor : '#ccc'}
-          style={{ marginRight: 8 }}
+      {/* Immagine in alto */}
+      <View style={styles.topImageContainer}>
+        <Image
+          source={require('../assets/images/1000curve-login.jpg')}
+          style={styles.topImage}
+          resizeMode="cover"
         />
-        <View>
-          {enabled ? (
-            <ThemedText style={{ fontSize: 14 }}>
-              Geolocalizzazione attiva
-              {location && `\nLat: ${location.latitude.toFixed(5)}, Lon: ${location.longitude.toFixed(5)}`}
-            </ThemedText>
-          ) : (
-            <ThemedText style={{ fontSize: 14, color: '#d00' }}>
-              Geolocalizzazione non attiva
-            </ThemedText>
-          )}
-          {errorMsg && <ThemedText style={{ color: '#d00', fontSize: 12 }}>{errorMsg}</ThemedText>}
-        </View>
-        {!enabled && <ActivityIndicator size="small" color={iconColor} style={{ marginLeft: 8 }} />}
       </View>
-      {/* Campo gara di oggi */}
-      <TextInput
-        style={[styles.input, { backgroundColor: '#eee', color: '#888' }]}
-        placeholder="Gara di oggi"
-        value={loadingRace ? 'Caricamento...' : (todayRace ? todayRace.name : 'Nessuna gara oggi')}
-        editable={false}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Numero pettorale"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <Button title="Login" onPress={handleLogin} disabled={!enabled} />
+      {/* Drawer in basso */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.drawerContainer}
+      >
+        {/* Riquadro arrotondato con scritta */}
+        <TouchableOpacity style={styles.roundedBox} activeOpacity={0.85}>
+          <ThemedText style={styles.roundedBoxText}>Partecipa alla gara</ThemedText>
+        </TouchableOpacity>
+        {/* Input e info gara */}
+        <View style={styles.inputsContainer}>
+          <View style={styles.inputWrapper}>
+            <View style={styles.letterIcon}>
+              <MaterialCommunityIcons name="email-outline" size={20} color="#888" />
+            </View>
+            <TextInput
+              style={styles.inputWithIcon}
+              placeholder="Email"
+              placeholderTextColor="#888"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </View>
+          <View style={styles.inputWrapper}>
+            <View style={styles.letterIcon}>
+              <FontAwesome name="id-card-o" size={18} color="#888" />
+            </View>
+            <TextInput
+              style={styles.inputWithIcon}
+              placeholder="Numero pettorale"
+              placeholderTextColor="#888"
+              value={password}
+              onChangeText={setPassword}
+              keyboardType="numeric"
+            />
+          </View>
+          <ThemedText style={styles.raceNameText}>
+            {loadingRace ? 'Caricamento gara...' : (todayRace ? todayRace.name : 'Nessuna gara oggi')}
+          </ThemedText>
+        </View>
+        {/* Pulsante Accedi */}
+        <TouchableOpacity
+          style={[styles.loginButton, !enabled && { opacity: 0.5 }]}
+          onPress={handleLogin}
+          disabled={!enabled}
+        >
+          <ThemedText style={styles.loginButtonText}>Accedi</ThemedText>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
     </ThemedView>
   );
 }
@@ -213,31 +235,134 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#fff',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    padding: 24,
   },
-  title: {
-    marginBottom: 32,
+  topImageContainer: {
+    width: '100%',
+    height: '45%',
+    minHeight: 220,
+    maxHeight: 400,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  geoBox: {
-    flexDirection: 'row',
+  topImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  drawerContainer: {
+    width: '100%',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#f8f8f8',
+    borderTopLeftRadius: 60,
+    borderTopRightRadius: 60,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 8,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 32,
+    minHeight: '65%',
+    maxHeight: '75%',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  roundedBox: {
+    backgroundColor: '#FFD700',
+    borderRadius: 32,
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+    marginBottom: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  roundedBoxText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#222',
+    letterSpacing: 0.5,
+  },
+  inputsContainer: {
+    width: '100%',
     alignItems: 'center',
     marginBottom: 24,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    padding: 12,
-    minWidth: 220,
-    maxWidth: 340,
   },
-  input: {
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     width: '100%',
-    maxWidth: 320,
-    padding: 12,
+    maxWidth: 340,
+    backgroundColor: '#fff',
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 8,
     marginBottom: 16,
-    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 2,
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  letterIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  letterIconText: {
+    fontSize: 18,
+    color: '#888',
+    fontWeight: '700',
+  },
+  inputWithIcon: {
+    flex: 1,
+    height: 54,
+    fontSize: 18,
+    color: '#222',
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    paddingVertical: 0,
+  },
+  raceNameText: {
+    fontSize: 15,
+    color: '#666',
+    marginTop: 4,
+    marginBottom: 0,
+    textAlign: 'center',
+  },
+  loginButton: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: '#FBBA00',
+    paddingVertical: 26,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    marginBottom: 12,
+    overflow: 'visible',
+  },
+  loginButtonText: {
+    color: '#111',
+    fontSize: 19,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });
