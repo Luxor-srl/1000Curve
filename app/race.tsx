@@ -215,8 +215,13 @@ export default function RaceScreen() {
                 style={styles.input}
                 placeholder="Codice cookie"
                 value={stageCode}
-                onChangeText={setStageCode}
+                onChangeText={(text) => {
+                  // Filtra solo i numeri
+                  const numericValue = text.replace(/[^0-9]/g, '');
+                  setStageCode(numericValue);
+                }}
                 placeholderTextColor="#999"
+                keyboardType="numeric"
               />
               <TouchableOpacity 
                 style={styles.searchButton}
