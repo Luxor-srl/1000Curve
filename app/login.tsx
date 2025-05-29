@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 // Import the necessary icons
 import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Device from 'expo-device';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
@@ -20,7 +21,9 @@ export default function LoginScreen() {
   // Stampa in console le coordinate ogni volta che cambiano
   React.useEffect(() => {
     if (location) {
-      console.log('Coordinate attuali:', location.latitude, location.longitude);
+      const timestamp = new Date().toLocaleTimeString();
+      const deviceName = Device.deviceName || 'Dispositivo sconosciuto';
+      console.log(`[${timestamp}] ${deviceName} - Coordinate attuali:`, location.latitude, location.longitude);
     }
   }, [location]);
   const iconColor = useThemeColor({}, 'tint');

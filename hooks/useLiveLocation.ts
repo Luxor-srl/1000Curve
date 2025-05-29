@@ -1,4 +1,3 @@
-
 import * as Location from 'expo-location';
 import { useEffect, useRef, useState } from 'react';
 
@@ -20,9 +19,9 @@ export function useLiveLocation() {
       setEnabled(true);
       watchId.current = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.Highest,
-          timeInterval: 1000,
-          distanceInterval: 0,
+          accuracy: Location.Accuracy.BestForNavigation, // Massima precisione
+          timeInterval: 1000, // Aggiorna ogni 1 secondo
+          distanceInterval: 1, // Aggiorna ogni 1 metro di movimento
         },
         (loc) => {
           if (isMounted) setLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
