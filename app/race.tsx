@@ -268,7 +268,7 @@ export default function RaceScreen() {
         <View style={styles.welcomeContent}>
           <ThemedText style={styles.welcomeGreeting}>Ciao {racer.racerfullname}!</ThemedText>
           <ThemedText style={styles.welcomeRace}>Benvenuto alla {parsed.name}</ThemedText>
-          <ThemedText style={styles.welcomeInstruction}>Inserisci il codice del cookie qui sotto</ThemedText>
+          <ThemedText style={styles.welcomeInstruction}>Inserisci il numero del cookie qui sotto</ThemedText>
           
           {/* Cookie Code Input */}
           <View style={styles.searchBox}>

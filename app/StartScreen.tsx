@@ -93,7 +93,7 @@ export default function StartScreen() {
       </View>
       <View style={styles.swiperContainer}>
         <View style={styles.swiperBg}>
-          <Text style={styles.swiperText}>Entra in pista</Text>
+          <Text style={styles.swiperText}>Entra nel Mito</Text>
 
           {/* Frecce animate per indicare lo scorrimento */}
           <Animated.View style={[styles.arrowContainer, arrowOpacity]}>
