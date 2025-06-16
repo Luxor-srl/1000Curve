@@ -1,0 +1,179 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const STORAGE_KEYS = {
+  RACER_DATA: 'racerData',
+  RACE_DATA: 'raceData',
+};
+
+const API_CONFIG = {
+  API_KEY: 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+  BASE_URL: 'https://crm.1000curve.com',
+};
+
+export interface RacerData {
+  racerid: string;
+  number: string;
+  racerclientid: string;
+  raceslug: string;
+  email: string;
+}
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  racerData: RacerData | null;
+  raceData: any | null;
+}
+
+/**
+ * Salva i dati di autenticazione nell'AsyncStorage
+ */
+export const saveAuthData = async (racerData: RacerData, raceData: any): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.RACER_DATA, JSON.stringify(racerData));
+    await AsyncStorage.setItem(STORAGE_KEYS.RACE_DATA, JSON.stringify(raceData));
+    console.log('Dati di autenticazione salvati');
+  } catch (error) {
+    console.error('Errore nel salvataggio dati di autenticazione:', error);
+    throw error;
+  }
+};
+
+/**
+ * Rimuove i dati di autenticazione dall'AsyncStorage
+ */
+export const clearAuthData = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEYS.RACER_DATA);
+    await AsyncStorage.removeItem(STORAGE_KEYS.RACE_DATA);
+    console.log('Dati di autenticazione rimossi');
+  } catch (error) {
+    console.error('Errore nella rimozione dati di autenticazione:', error);
+    throw error;
+  }
+};
+
+/**
+ * Recupera i dati di autenticazione dall'AsyncStorage
+ */
+export const getAuthData = async (): Promise<AuthState> => {
+  try {
+    const [racerDataString, raceDataString] = await Promise.all([
+      AsyncStorage.getItem(STORAGE_KEYS.RACER_DATA),
+      AsyncStorage.getItem(STORAGE_KEYS.RACE_DATA),
+    ]);
+
+    if (!racerDataString || !raceDataString) {
+      return {
+        isAuthenticated: false,
+        racerData: null,
+        raceData: null,
+      };
+    }
+
+    const racerData: RacerData = JSON.parse(racerDataString);
+    const raceData = JSON.parse(raceDataString);
+
+    // Verifica che i dati essenziali siano presenti
+    if (!racerData.racerid || !racerData.racerclientid || !racerData.raceslug) {
+      return {
+        isAuthenticated: false,
+        racerData: null,
+        raceData: null,
+      };
+    }
+
+    return {
+      isAuthenticated: true,
+      racerData,
+      raceData,
+    };
+  } catch (error) {
+    console.error('Errore nel recupero dati di autenticazione:', error);
+    return {
+      isAuthenticated: false,
+      racerData: null,
+      raceData: null,
+    };
+  }
+};
+
+/**
+ * Verifica se la gara è ancora valida (non scaduta da più di 24 ore)
+ */
+export const isRaceValid = async (raceSlug: string): Promise<boolean> => {
+  try {
+    const headers = {
+      'Api-Key': API_CONFIG.API_KEY,
+    };
+    const params = new URLSearchParams({
+      action: 'get',
+      getAction: 'getRaces',
+    });
+    const url = `${API_CONFIG.BASE_URL}/Race?${params.toString()}`;
+    const response = await fetch(url, { method: 'GET', headers });
+    const data = await response.json();
+
+    if (data && Array.isArray(data.races)) {
+      const currentRace = data.races.find((race: any) => race.slug === raceSlug);
+      if (currentRace) {
+        const now = new Date().getTime();
+        const finishTime = currentRace.finishDateTimestamp;
+        
+        // La gara è valida se non è finita da più di 24 ore
+        return now <= finishTime + (24 * 60 * 60 * 1000);
+      }
+    }
+    return false;
+  } catch (error) {
+    console.warn('Errore nel controllo validità gara:', error);
+    // In caso di errore di rete, consideriamo la gara valida per non bloccare l'utente
+    return true;
+  }
+};
+
+/**
+ * Verifica se l'utente è autenticato e se i dati sono ancora validi
+ */
+export const checkAuthStatus = async (): Promise<AuthState> => {
+  const authData = await getAuthData();
+  
+  if (!authData.isAuthenticated || !authData.racerData) {
+    return authData;
+  }
+
+  // Verifica se la gara è ancora valida
+  const raceValid = await isRaceValid(authData.racerData.raceslug);
+  
+  if (!raceValid) {
+    console.log('Gara scaduta, rimozione dati...');
+    await clearAuthData();
+    return {
+      isAuthenticated: false,
+      racerData: null,
+      raceData: null,
+    };
+  }
+
+  return authData;
+};
+
+/**
+ * Funzione di debug per controllare lo stato attuale dell'autenticazione
+ */
+export const debugAuthStatus = async (): Promise<void> => {
+  try {
+    const authData = await getAuthData();
+    console.log('=== AUTH DEBUG ===');
+    console.log('Is Authenticated:', authData.isAuthenticated);
+    console.log('Racer Data:', authData.racerData);
+    console.log('Race Data:', authData.raceData ? 'Present' : 'Not found');
+    
+    if (authData.racerData) {
+      const isValid = await isRaceValid(authData.racerData.raceslug);
+      console.log('Race Valid:', isValid);
+    }
+    console.log('==================');
+  } catch (error) {
+    console.error('Debug Auth Error:', error);
+  }
+};

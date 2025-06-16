@@ -1,9 +1,9 @@
+import { checkAuthStatus } from '@/utils/auth';
 import { FontAwesome } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, { interpolate, runOnJS, useAnimatedGestureHandler, useAnimatedStyle, useSharedValue, withRepeat, withSpring, withTiming } from 'react-native-reanimated';
-
 
 const { width } = Dimensions.get('window');
 const SWIPER_WIDTH = width * 0.9;
@@ -14,25 +14,52 @@ const SWIPE_THRESHOLD = SWIPER_WIDTH - CIRCLE_SIZE - 12;
 
 import YellowGradientBackground from '../components/YellowGradientBackground';
 
-
 import { useRouter } from 'expo-router';
 
 export default function StartScreen() {
   const [unlocked, setUnlocked] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const translateX = useSharedValue(0);
   const pulseAnimation = useSharedValue(1);
   const router = useRouter();
 
+  // Controlla se l'utente è già autenticato all'avvio
+  useEffect(() => {
+    const checkExistingAuth = async () => {
+      try {
+        const authStatus = await checkAuthStatus();
+        
+        if (authStatus.isAuthenticated && authStatus.raceData) {
+          console.log('Utente già autenticato, reindirizzamento...');
+          
+          // Naviga direttamente alla pagina race
+          router.replace({
+            pathname: '/race',
+            params: {
+              raceData: JSON.stringify(authStatus.raceData),
+            },
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Errore nel controllo autenticazione:', error);
+      }
+      setIsCheckingAuth(false);
+    };
+
+    checkExistingAuth();
+  }, [router]);
+
   // Animazione pulsante per indicare lo scorrimento
   useEffect(() => {
-    if (!unlocked) {
+    if (!unlocked && !isCheckingAuth) {
       pulseAnimation.value = withRepeat(
         withTiming(1.1, { duration: 1000 }),
         -1,
         true
       );
     }
-  }, [unlocked]);
+  }, [unlocked, isCheckingAuth]);
 
   const onUnlock = () => {
     setUnlocked(true);
@@ -81,35 +108,40 @@ export default function StartScreen() {
     <View style={styles.container}>
       {/* Background giallo sfumato */}
       <YellowGradientBackground />
-      {/* Animazione "setosa" dinamica in alto */}
-
-
+      
       <View style={styles.centerContent}>
         <Image source={require('../assets/images/logo-mille-dark.png')} style={styles.logo} resizeMode="contain"/>
         <Text style={styles.hashtag}>#NOWFORALL</Text>
       </View>
-      <View style={styles.swiperContainer}>
-        <View style={styles.swiperBg}>
-          <Text style={styles.swiperText}>Entra nel Mito</Text>
-
-          {/* Frecce animate per indicare lo scorrimento */}
-          <Animated.View style={[styles.arrowContainer, arrowOpacity]}>
-            <Text style={styles.arrow}>›››</Text>
-          </Animated.View>
-
-          <PanGestureHandler onGestureEvent={gestureHandler} enabled={!unlocked}>
-            <Animated.View style={[styles.lockContainer, lockStyle]}>
-              <View style={styles.lockCircle}>
-                <FontAwesome 
-                  name={unlocked ? 'unlock' : 'lock'} 
-                  size={LOCK_SIZE} 
-                  color="#333" 
-                />
-              </View>
-            </Animated.View>
-          </PanGestureHandler>
+      
+      {isCheckingAuth ? (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Verifica autenticazione...</Text>
         </View>
-      </View>
+      ) : (
+        <View style={styles.swiperContainer}>
+          <View style={styles.swiperBg}>
+            <Text style={styles.swiperText}>Entra nel Mito</Text>
+
+            {/* Frecce animate per indicare lo scorrimento */}
+            <Animated.View style={[styles.arrowContainer, arrowOpacity]}>
+              <Text style={styles.arrow}>›››</Text>
+            </Animated.View>
+
+            <PanGestureHandler onGestureEvent={gestureHandler} enabled={!unlocked}>
+              <Animated.View style={[styles.lockContainer, lockStyle]}>
+                <View style={styles.lockCircle}>
+                  <FontAwesome 
+                    name={unlocked ? 'unlock' : 'lock'} 
+                    size={LOCK_SIZE} 
+                    color="#333" 
+                  />
+                </View>
+              </Animated.View>
+            </PanGestureHandler>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -214,5 +246,17 @@ const styles = StyleSheet.create({
     top: (SWIPER_HEIGHT - LOCK_SIZE) / 2,
     zIndex: 1,
     backgroundColor: 'transparent',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
   },
 });

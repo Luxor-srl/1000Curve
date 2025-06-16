@@ -2,7 +2,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useLiveLocation } from '@/hooks/useLiveLocation';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { RacerData, saveAuthData } from '@/utils/auth';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
@@ -130,14 +130,13 @@ export default function LoginScreen() {
         return;
       }
       // Salva i dati del racer per uso futuro
-      const racerData = {
+      const racerData: RacerData = {
         racerid: dataRacer.id,
         number: dataRacer.number,
         racerclientid: dataRacer.clientId,
         raceslug: raceSlug,
         email,
       };
-      await AsyncStorage.setItem('racerData', JSON.stringify(racerData));
 
       // 2. Chiamata a /Race per ottenere i dati della gara
       const paramsRace = new URLSearchParams({
@@ -156,6 +155,10 @@ export default function LoginScreen() {
         console.error('Errore di parsing JSON /Race:', parseError, 'Risposta ricevuta:', textRace);
         dataRace = { error: 'Risposta non in formato JSON', raw: textRace };
       }
+
+      // Salva i dati di autenticazione
+      await saveAuthData(racerData, dataRace);
+
       // Naviga alla pagina race passando i dati della gara come parametro
       router.replace({
         pathname: '/race',

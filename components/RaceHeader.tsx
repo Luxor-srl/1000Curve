@@ -5,20 +5,12 @@ import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'rea
 interface RaceHeaderProps {
   pilotName: string;
   onSidebarPress: () => void;
+  onLogoutPress: () => void;
 }
 
-const RaceHeader: React.FC<RaceHeaderProps> = ({ pilotName, onSidebarPress }) => {
+const RaceHeader: React.FC<RaceHeaderProps> = ({ pilotName, onSidebarPress, onLogoutPress }) => {
   const { height: screenHeight } = Dimensions.get('window');
   const isSmallScreen = screenHeight < 700; // Consideriamo piccoli gli schermi sotto i 700px
-  
-  const getInitials = (name: string) => {
-    if (!name) return '';
-    const nameParts = name.split(' ');
-    if (nameParts.length > 1) {
-      return `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
 
   return (
     <View style={[styles.headerContainer, isSmallScreen && styles.headerContainerSmall]}>
@@ -32,9 +24,13 @@ const RaceHeader: React.FC<RaceHeaderProps> = ({ pilotName, onSidebarPress }) =>
       />
       <View style={styles.pilotInfoContainer}>
         <Text style={[styles.pilotName, isSmallScreen && styles.pilotNameSmall]}>{pilotName}</Text>
-        <View style={[styles.profileInitialContainer, isSmallScreen && styles.profileInitialContainerSmall]}>
-          <Text style={[styles.profileInitial, isSmallScreen && styles.profileInitialSmall]}>{getInitials(pilotName)}</Text>
-        </View>
+        <TouchableOpacity 
+          onPress={onLogoutPress}
+          style={[styles.logoutContainer, isSmallScreen && styles.logoutContainerSmall]}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="log-out-outline" size={isSmallScreen ? 20 : 24} color="#fff" />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -82,26 +78,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginRight: 8,
   },
-  profileInitialContainer: {
+  logoutContainer: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: 'black', // Colore di sfondo per le iniziali
+    backgroundColor: '#dc3545', // Colore rosso per il logout
     justifyContent: 'center',
     alignItems: 'center',
   },
-  profileInitialContainerSmall: {
+  logoutContainerSmall: {
     width: 26,
     height: 26,
     borderRadius: 13,
-  },
-  profileInitial: {
-    color: '#FFD700', // Colore delle iniziali
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  profileInitialSmall: {
-    fontSize: 12,
   },
 });
 

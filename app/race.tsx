@@ -2,9 +2,10 @@ import RaceHeader from '@/components/RaceHeader'; // Importa il nuovo componente
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useLiveLocation } from '@/hooks/useLiveLocation';
+import { clearAuthData } from '@/utils/auth';
 import { getDistanceFromLatLonInMeters } from '@/utils/geo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Dimensions, Keyboard, Linking, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -12,6 +13,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 export default function RaceScreen() {
   const { raceData } = useLocalSearchParams();
+  const router = useRouter();
   const [parsed, setParsed] = useState<any>(null);
   const [racer, setRacer] = useState<any>(null);
   const [stageCode, setStageCode] = useState('');
@@ -38,9 +40,51 @@ export default function RaceScreen() {
 
   // Recupera i dati del racer aggiornati (inclusi id, clientId, number, email)
   useEffect(() => {
-    AsyncStorage.getItem('racerData').then((data) => {
-      if (data) setRacer(JSON.parse(data));
-    });
+    const loadRacerData = async () => {
+      try {
+        const racerDataString = await AsyncStorage.getItem('racerData');
+        if (racerDataString) {
+          const racerObj = JSON.parse(racerDataString);
+          setRacer(racerObj);
+          // Aggiorna subito la lista dei cookie dopo aver caricato il racer
+          setTimeout(() => {
+            loadCookiesList();
+          }, 0);
+
+          // Aggiorna i dati della gara con una chiamata a /Race
+          if (racerObj.raceslug) {
+            try {
+              const headers = {
+                'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+              };
+              const params = new URLSearchParams({
+                action: 'get',
+                getAction: 'getRace',
+                slug: racerObj.raceslug,
+              });
+              const url = `https://crm.1000curve.com/Race?${params.toString()}`;
+              const response = await fetch(url, { method: 'GET', headers });
+              const text = await response.text();
+              let data = null;
+              try {
+                data = text ? JSON.parse(text) : null;
+              } catch (e) {
+                console.error('Errore parsing JSON /Race:', e, text);
+              }
+              if (data) {
+                setParsed(data);
+                await AsyncStorage.setItem('raceData', JSON.stringify(data));
+              }
+            } catch (e) {
+              console.error('Errore aggiornamento dati gara /Race:', e);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Errore nel caricamento dati racer:', error);
+      }
+    };
+    loadRacerData();
   }, []);
 
   // Recupera i dati della gara per il timer
@@ -238,6 +282,36 @@ export default function RaceScreen() {
     }
   };
 
+  // Funzione di logout
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Sei sicuro di voler uscire? Dovrai effettuare nuovamente il login.',
+      [
+        {
+          text: 'Annulla',
+          style: 'cancel',
+        },
+        {
+          text: 'Esci',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Utilizza la funzione del modulo auth per rimuovere i dati
+              await clearAuthData();
+              
+              // Naviga alla start screen
+              router.replace('/');
+            } catch (error) {
+              console.error('Errore durante il logout:', error);
+              Alert.alert('Errore', 'Errore durante il logout');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (!parsed || !racer) {
     return (
       <ThemedView style={styles.container}>
@@ -270,7 +344,7 @@ export default function RaceScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      <RaceHeader pilotName={racer.racerfullname} onSidebarPress={handleSidebarOpen} />
+      <RaceHeader pilotName={racer.racerfullname} onSidebarPress={handleSidebarOpen} onLogoutPress={handleLogout} />
       
       {/* Welcome Box with Cookie Logic */}
       <View style={[styles.welcomeBox, isSmallScreen && styles.welcomeBoxSmall]}>
@@ -307,87 +381,89 @@ export default function RaceScreen() {
                   style={[styles.searchButton, isSmallScreen && styles.searchButtonSmall]}
                   disabled={searchingStage}
                   onPress={async () => {
-                  Keyboard.dismiss(); // Nasconde la tastiera
-                  setStageDone(null); // reset stato
-                  setSearchingStage(true);
-                  setFoundStage(null);
-                  setCookieCheckMessage('Ricerca tappa in corso...');
-                  // Cerca la tappa e normalizza la struttura address
-                  const stage = parsed.raceLocations?.find((loc: any) => String(loc.code) === stageCode);
-                  let found = null;
-                  if (stage && stage.address && typeof stage.address === 'object') {
-                    function dmsToDecimal(val: any) {
-                      if (typeof val === 'number') return val;
-                      if (typeof val === 'string') {
-                        if (/^-?\d+\.\d+$/.test(val.trim())) return parseFloat(val);
-                        const dmsMatch = val.match(/(\d+)[°\s]+(\d+)[']?[\s]*(\d+(?:\.\d+)?)["\s]*([NSEW])?/i);
-                        if (dmsMatch) {
-                          let deg = parseFloat(dmsMatch[1]);
-                          let min = parseFloat(dmsMatch[2]);
-                          let sec = parseFloat(dmsMatch[3]);
-                          let dir = dmsMatch[4];
-                          let dec = deg + min/60 + sec/3600;
-                          if (dir && (dir.toUpperCase() === 'S' || dir.toUpperCase() === 'W')) dec = -dec;
-                          return dec;
+                    console.log('[DEBUG] Pulsante ricerca cookie premuto', { stageCode });
+                    Keyboard.dismiss(); // Nasconde la tastiera
+                    setStageDone(null); // reset stato
+                    setSearchingStage(true);
+                    setFoundStage(null);
+                    setCookieCheckMessage('Ricerca tappa in corso...');
+                    // Cerca la tappa e normalizza la struttura address
+                    const stage = parsed.raceLocations?.find((loc: any) => String(loc.code) === stageCode);
+                    let found = null;
+                    if (stage && stage.address && typeof stage.address === 'object') {
+                      function dmsToDecimal(val: any) {
+                        if (typeof val === 'number') return val;
+                        if (typeof val === 'string') {
+                          if (/^-?\d+\.\d+$/.test(val.trim())) return parseFloat(val);
+                          const dmsMatch = val.match(/(\d+)[°\s]+(\d+)[']?[\s]*(\d+(?:\.\d+)?)["\s]*([NSEW])?/i);
+                          if (dmsMatch) {
+                            let deg = parseFloat(dmsMatch[1]);
+                            let min = parseFloat(dmsMatch[2]);
+                            let sec = parseFloat(dmsMatch[3]);
+                            let dir = dmsMatch[4];
+                            let dec = deg + min/60 + sec/3600;
+                            if (dir && (dir.toUpperCase() === 'S' || dir.toUpperCase() === 'W')) dec = -dec;
+                            return dec;
+                          }
                         }
+                        return undefined;
                       }
-                      return undefined;
+                      const lat = dmsToDecimal(stage.address.latitude);
+                      const lon = dmsToDecimal(stage.address.longitude);
+                      found = { ...stage, latitude: lat, longitude: lon };
+                    } else {
+                      found = stage || null;
                     }
-                    const lat = dmsToDecimal(stage.address.latitude);
-                    const lon = dmsToDecimal(stage.address.longitude);
-                    found = { ...stage, latitude: lat, longitude: lon };
-                  } else {
-                    found = stage || null;
-                  }
-                  setFoundStage(found);
-                  // Chiamata API per verificare se la tappa è già stata fatta
-                  let cookieOk = false;
-                  if (found && racer) {
-                    try {
-                      setCookieCheckMessage('Verifica cookie in corso...');
-                      // Nuova chiamata a /Racer per controllare il cookie
-                      const paramsRacer = new URLSearchParams({
-                        action: 'get',
-                        getAction: 'raceLocationDone',
-                        id: racer.racerid,
-                        clientId: racer.racerclientid,
-                        raceLocationCode: found.code,
-                      });
-                      const urlRacer = `https://crm.1000curve.com/Racer?${paramsRacer.toString()}`;
-                      const headers = {
-                        'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
-                      };
-                      console.log('[DEBUG] /Racer CONTROLLO COOKIE');
-                      console.log('  URL:', urlRacer);
-                      console.log('  HEADERS:', headers);
-                      console.log('  PARAMS:', {
-                        action: 'get',
-                        getAction: 'raceLocationDone',
-                        id: racer.racerid,
-                        clientId: racer.racerclientid,
-                        raceLocationCode: found.code,
-                      });
-                      const responseRacer = await fetch(urlRacer, { method: 'GET', headers });
-                      console.log('  HTTP STATUS:', responseRacer.status, responseRacer.statusText);
-                      const textRacer = await responseRacer.text();
-                      console.log('  RESPONSE BODY:', textRacer);
-                      const trimmed = textRacer.trim();
-                      if (trimmed === 'true') {
-                        setStageDone(true);
-                        setCookieCheckMessage('Cookie trovato!');
-                      } else if (trimmed === 'false') {
-                        setStageDone(false);
-                        setCookieCheckMessage('Cookie non trovato.');
-                      } else {
+                    setFoundStage(found);
+                    console.log('[DEBUG] setFoundStage', found);
+                    // Chiamata API per verificare se la tappa è già stata fatta
+                    let cookieOk = false;
+                    if (found && racer) {
+                      try {
+                        setCookieCheckMessage('Verifica cookie in corso...');
+                        // Nuova chiamata a /Racer per controllare il cookie
+                        const paramsRacer = new URLSearchParams({
+                          action: 'get',
+                          getAction: 'raceLocationDone',
+                          id: racer.racerid,
+                          clientId: racer.racerclientid,
+                          raceLocationCode: found.code,
+                        });
+                        const urlRacer = `https://crm.1000curve.com/Racer?${paramsRacer.toString()}`;
+                        const headers = {
+                          'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+                        };
+                        console.log('[DEBUG] /Racer CONTROLLO COOKIE');
+                        console.log('  URL:', urlRacer);
+                        console.log('  HEADERS:', headers);
+                        console.log('  PARAMS:', {
+                          action: 'get',
+                          getAction: 'raceLocationDone',
+                          id: racer.racerid,
+                          clientId: racer.racerclientid,
+                          raceLocationCode: found.code,
+                        });
+                        const responseRacer = await fetch(urlRacer, { method: 'GET', headers });
+                        console.log('  HTTP STATUS:', responseRacer.status, responseRacer.statusText);
+                        const textRacer = await responseRacer.text();
+                        console.log('  RESPONSE BODY:', textRacer);
+                        const trimmed = textRacer.trim();
+                        if (trimmed === 'true') {
+                          setStageDone(true);
+                          setCookieCheckMessage('Cookie trovato!');
+                        } else if (trimmed === 'false') {
+                          setStageDone(false);
+                          setCookieCheckMessage('Cookie non trovato.');
+                        } else {
+                          setStageDone(null);
+                          setCookieCheckMessage('Risposta inattesa: ' + trimmed);
+                        }
+                      } catch (error) {
                         setStageDone(null);
-                        setCookieCheckMessage('Risposta inattesa: ' + trimmed);
+                        setCookieCheckMessage('Errore nella verifica del cookie.');
+                        console.error('Errore nella verifica del cookie:', error);
                       }
-                    } catch (error) {
-                      setStageDone(null);
-                      setCookieCheckMessage('Errore nella verifica del cookie.');
-                      console.error('Errore nella verifica del cookie:', error);
                     }
-                  }
                     setSearchingStage(false);
                     setCookieCheckMessage(null);
                   }}
@@ -409,98 +485,117 @@ export default function RaceScreen() {
 
       {/* Found Stage Display - Large name and START button */}
       {foundStage && (
-        <View style={styles.foundStageContainer}>
-          <ThemedText style={styles.foundStageName}>{foundStage.name}</ThemedText>
-          
-          {location && foundStage.latitude != null && foundStage.longitude != null ? (
-            getDistanceFromLatLonInMeters(
-              location.latitude,
-              location.longitude,
-              Number(foundStage.latitude),
-              Number(foundStage.longitude)
-            ) <= 100 ? (
-              stageDone === true ? (
-                <View style={styles.cookieDoneContainer}>
-                  <ThemedText style={styles.cookieDoneText}>Cookie già fatto</ThemedText>
-                </View>
-              ) : searchingStage ? (
-                <ActivityIndicator size="large" color="#0a7ea4" style={{ marginTop: 20 }} />
-              ) : countdown === null ? (
-                <TouchableOpacity 
-                  style={[
-                    styles.startButton,
-                    { backgroundColor: stageDone ? '#28a745' : '#FFD700' }
-                  ]}
-                  onPress={async () => {
-                    // Verifica ancora una volta il cookie prima di iniziare il countdown
-                    setSearchingStage(true);
-                    setCookieCheckMessage('Verifica finale cookie...');
-                    try {
-                      const paramsLog = new URLSearchParams({
-                        action: 'get',
-                        getAction: 'getRacerLocationTime',
-                        racerId: racer.racerid,
-                        clientId: racer.racerclientid,
-                        raceLocationCode: foundStage.code,
-                      });
-                      const urlLog = `https://crm.1000curve.com/CRMRaceLog?${paramsLog.toString()}`;
-                      const headers = {
-                        'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
-                      };
-                      const responseLog = await fetch(urlLog, { method: 'GET', headers, credentials: 'include' });
-                      const textLog = await responseLog.text();
-                      
-                      if (textLog.trim() === 'EXISTS') {
-                        setStageDone(true);
-                      } else {
-                        // Se il cookie non esiste, inizia il countdown
-                        setCountdown(60);
-                      }
-                    } catch (error) {
-                      console.error('Errore nella verifica finale del cookie:', error);
-                      // Se c'è un errore, permettiamo comunque di procedere
-                      setCountdown(60);
-                    }
-                    setSearchingStage(false);
-                    setCookieCheckMessage(null);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <ThemedText style={[
-                    styles.startButtonText,
-                    { color: stageDone ? '#fff' : '#022C43' }
-                  ]}>START</ThemedText>
-                </TouchableOpacity>
-              ) : countdown === 0 ? (
-                <View style={styles.goContainer}>
-                  <ThemedText style={styles.goText}>GO</ThemedText>
-                </View>
+        (() => {
+          console.log('[DEBUG] Rendering foundStage', {
+            foundStage,
+            location,
+            latitude: foundStage.latitude,
+            longitude: foundStage.longitude,
+            stageDone,
+            countdown,
+            distanza: location && foundStage.latitude != null && foundStage.longitude != null
+              ? getDistanceFromLatLonInMeters(
+                  location.latitude,
+                  location.longitude,
+                  Number(foundStage.latitude),
+                  Number(foundStage.longitude)
+                )
+              : null
+          });
+          return (
+            <View style={styles.foundStageContainer}>
+              <ThemedText style={styles.foundStageName}>{foundStage.name}</ThemedText>
+              {location && foundStage.latitude != null && foundStage.longitude != null ? (
+                getDistanceFromLatLonInMeters(
+                  location.latitude,
+                  location.longitude,
+                  Number(foundStage.latitude),
+                  Number(foundStage.longitude)
+                ) <= 100 ? (
+                  stageDone === true ? (
+                    <View style={styles.cookieDoneContainer}>
+                      <ThemedText style={styles.cookieDoneText}>Cookie già fatto</ThemedText>
+                    </View>
+                  ) : searchingStage ? (
+                    <ActivityIndicator size="large" color="#0a7ea4" style={{ marginTop: 20 }} />
+                  ) : countdown === null ? (
+                    <TouchableOpacity 
+                      style={[
+                        styles.startButton,
+                        { backgroundColor: stageDone ? '#28a745' : '#FFD700' }
+                      ]}
+                      onPress={async () => {
+                        // Verifica ancora una volta il cookie prima di iniziare il countdown
+                        setSearchingStage(true);
+                        setCookieCheckMessage('Verifica finale cookie...');
+                        try {
+                          const paramsLog = new URLSearchParams({
+                            action: 'get',
+                            getAction: 'getRacerLocationTime',
+                            racerId: racer.racerid,
+                            clientId: racer.racerclientid,
+                            raceLocationCode: foundStage.code,
+                          });
+                          const urlLog = `https://crm.1000curve.com/CRMRaceLog?${paramsLog.toString()}`;
+                          const headers = {
+                            'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+                          };
+                          const responseLog = await fetch(urlLog, { method: 'GET', headers, credentials: 'include' });
+                          const textLog = await responseLog.text();
+                          
+                          if (textLog.trim() === 'EXISTS') {
+                            setStageDone(true);
+                          } else {
+                            // Se il cookie non esiste, inizia il countdown
+                            setCountdown(60);
+                          }
+                        } catch (error) {
+                          console.error('Errore nella verifica finale del cookie:', error);
+                          // Se c'è un errore, permettiamo comunque di procedere
+                          setCountdown(60);
+                        }
+                        setSearchingStage(false);
+                        setCookieCheckMessage(null);
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <ThemedText style={[
+                        styles.startButtonText,
+                        { color: stageDone ? '#fff' : '#022C43' }
+                      ]}>START</ThemedText>
+                    </TouchableOpacity>
+                  ) : countdown === 0 ? (
+                    <View style={styles.goContainer}>
+                      <ThemedText style={styles.goText}>GO</ThemedText>
+                    </View>
+                  ) : (
+                    <View style={styles.countdownContainer}>
+                      <ThemedText style={styles.countdownText}>{countdown}</ThemedText>
+                    </View>
+                  )
+                ) : (
+                  <View style={styles.tooFarContainer}>
+                    <ThemedText style={styles.tooFarText}>
+                      Sei ancora lontano dal cookie. Recati qui:
+                    </ThemedText>
+                    <TouchableOpacity
+                      style={styles.mapsButton}
+                      onPress={() => {
+                        const url = `https://www.google.com/maps/search/?api=1&query=${foundStage.latitude},${foundStage.longitude}`;
+                        Linking.openURL(url);
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <ThemedText style={styles.mapsButtonText}>Apri in Google Maps</ThemedText>
+                    </TouchableOpacity>
+                  </View>
+                )
               ) : (
-                <View style={styles.countdownContainer}>
-                  <ThemedText style={styles.countdownText}>{countdown}</ThemedText>
-                </View>
-              )
-            ) : (
-              <View style={styles.tooFarContainer}>
-                <ThemedText style={styles.tooFarText}>
-                  Sei ancora lontano dal cookie. Recati qui:
-                </ThemedText>
-                <TouchableOpacity
-                  style={styles.mapsButton}
-                  onPress={() => {
-                    const url = `https://www.google.com/maps/search/?api=1&query=${foundStage.latitude},${foundStage.longitude}`;
-                    Linking.openURL(url);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <ThemedText style={styles.mapsButtonText}>Apri in Google Maps</ThemedText>
-                </TouchableOpacity>
-              </View>
-            )
-          ) : (
-            <ThemedText style={styles.noCoordinatesText}>Coordinate tappa non disponibili</ThemedText>
-          )}
-        </View>
+                <ThemedText style={styles.noCoordinatesText}>Coordinate tappa non disponibili</ThemedText>
+              )}
+            </View>
+          );
+        })()
       )}
 
       {/* Bottom Drawer */}
