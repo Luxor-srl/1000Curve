@@ -12,7 +12,6 @@ const CIRCLE_SIZE = 68;
 const LOCK_SIZE = 30;
 const SWIPE_THRESHOLD = SWIPER_WIDTH - CIRCLE_SIZE - 12;
 
-import AnimatedWave from '../components/AnimatedWave';
 import YellowGradientBackground from '../components/YellowGradientBackground';
 
 
@@ -82,10 +81,8 @@ export default function StartScreen() {
     <View style={styles.container}>
       {/* Background giallo sfumato */}
       <YellowGradientBackground />
-      {/* Onda animata gialla in alto */}
-      <View style={styles.topImageContainer}>
-        <AnimatedWave />
-      </View>
+      {/* Animazione "setosa" dinamica in alto */}
+
 
       <View style={styles.centerContent}>
         <Image source={require('../assets/images/logo-mille-dark.png')} style={styles.logo} resizeMode="contain"/>

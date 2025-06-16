@@ -1,12 +1,2 @@
-import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
-
-export default function RootIndex() {
-  const router = useRouter();
-  
-  useEffect(() => {
-    router.replace('/StartScreen');
-  }, [router]);
-
-  return null;
-}
+// Importiamo direttamente StartScreen e la esportiamo come default
+export { default } from './StartScreen';

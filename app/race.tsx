@@ -22,10 +22,15 @@ export default function RaceScreen() {
   const [searchingStage, setSearchingStage] = useState(false);
   const [cookieCheckMessage, setCookieCheckMessage] = useState<string | null>(null);
   
+  // Timer states
+  const [raceTimer, setRaceTimer] = useState<string>('');
+  const [raceInfo, setRaceInfo] = useState<any>(null);
+  
   // Drawer state and animation
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const drawerAnimation = useRef(new Animated.Value(0)).current;
   const { height: screenHeight } = Dimensions.get('window');
+  const isSmallScreen = screenHeight < 700; // Consideriamo piccoli gli schermi sotto i 700px
 
   // RoadBook/Cookie data state
   const [cookiesList, setCookiesList] = useState<any[]>([]);
@@ -38,6 +43,89 @@ export default function RaceScreen() {
     });
   }, []);
 
+  // Recupera i dati della gara per il timer
+  useEffect(() => {
+    const fetchRaceInfo = async () => {
+      if (!racer) return;
+      
+      try {
+        const headers = {
+          'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+        };
+        const params = new URLSearchParams({
+          action: 'get',
+          getAction: 'getRaces',
+        });
+        const url = `https://crm.1000curve.com/Race?${params.toString()}`;
+        const response = await fetch(url, { method: 'GET', headers });
+        const data = await response.json();
+        
+        if (data && Array.isArray(data.races)) {
+          // Trova la gara corrispondente allo slug del racer
+          const currentRace = data.races.find((race: any) => race.slug === racer.raceslug);
+          if (currentRace) {
+            setRaceInfo(currentRace);
+          }
+        }
+      } catch (error) {
+        console.error('Errore nel recupero informazioni gara:', error);
+      }
+    };
+
+    fetchRaceInfo();
+  }, [racer]);
+
+  // Timer effect per countdown fino alla fine della gara
+  useEffect(() => {
+    if (!raceInfo) return;
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const startTime = raceInfo.startDateTimestamp;
+      const finishTime = raceInfo.finishDateTimestamp;
+
+      if (now < startTime) {
+        // Gara non ancora iniziata - countdown all'inizio
+        const timeToStart = startTime - now;
+        const days = Math.floor(timeToStart / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeToStart % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeToStart % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeToStart % (1000 * 60)) / 1000);
+        
+        if (days > 0) {
+          setRaceTimer(`Inizio tra: ${days}g ${hours}h ${minutes}m`);
+        } else if (hours > 0) {
+          setRaceTimer(`Inizio tra: ${hours}h ${minutes}m ${seconds}s`);
+        } else {
+          setRaceTimer(`Inizio tra: ${minutes}m ${seconds}s`);
+        }
+      } else if (now > finishTime) {
+        // Gara terminata
+        setRaceTimer('Gara terminata');
+      } else {
+        // Gara in corso - countdown alla fine
+        const timeRemaining = finishTime - now;
+        const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+        
+        if (days > 0) {
+          setRaceTimer(`${days}g ${hours}h ${minutes}m`);
+        } else if (hours > 0) {
+          setRaceTimer(`${hours}h ${minutes}m ${seconds}s`);
+        } else {
+          setRaceTimer(`${minutes}m ${seconds}s`);
+        }
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [raceInfo]);
+
   // Countdown effect: deve stare qui, fuori dal return!
   useEffect(() => {
     if (countdown === null) return;
@@ -47,6 +135,9 @@ export default function RaceScreen() {
         if (!racer || !foundStage) return;
         try {
           console.log('Invio tempo cookie a /CRMRaceLog...');
+          // Attendi 2 secondi per mostrare il "GO"
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
           // Timestamp in formato intero, senza stringa
           const timestamp = Date.now();
           const params = new URLSearchParams({
@@ -70,107 +161,23 @@ export default function RaceScreen() {
           const text = await response.text();
           console.log('Risposta /CRMRaceLog:', text);
           if (text.trim() === 'SUCCESS') {
-            // Mostra conferma, resetta countdown e aggiorna stato tappa fatta
+            // Imposta direttamente la tappa come completata
+            setStageDone(true);
             setCountdown(null);
-            // Mostra un messaggio di conferma e, alla chiusura, rilancia la ricerca della tappa
+            // Mostra un messaggio di conferma semplice
             Alert.alert(
               'Cookie registrato!',
-              'Hai completato correttamente la tappa.',
-              [
-                {
-                  text: 'OK',
-                  onPress: () => {
-                    // Rilancia la ricerca della tappa per aggiornare lo stato
-                    if (parsed && stageCode) {
-                      const stage = parsed.raceLocations?.find((loc: any) => String(loc.code) === stageCode);
-                      let found = null;
-                      if (stage && stage.address && typeof stage.address === 'object') {
-                        function dmsToDecimal(val: any) {
-                          if (typeof val === 'number') return val;
-                          if (typeof val === 'string') {
-                            if (/^-?\d+\.\d+$/.test(val.trim())) return parseFloat(val);
-                            const dmsMatch = val.match(/(\d+)[°\s]+(\d+)[']?[\s]*(\d+(?:\.\d+)?)["\s]*([NSEW])?/i);
-                            if (dmsMatch) {
-                              let deg = parseFloat(dmsMatch[1]);
-                              let min = parseFloat(dmsMatch[2]);
-                              let sec = parseFloat(dmsMatch[3]);
-                              let dir = dmsMatch[4];
-                              let dec = deg + min/60 + sec/3600;
-                              if (dir && (dir.toUpperCase() === 'S' || dir.toUpperCase() === 'W')) dec = -dec;
-                              return dec;
-                            }
-                          }
-                          return undefined;
-                        }
-                        const lat = dmsToDecimal(stage.address.latitude);
-                        const lon = dmsToDecimal(stage.address.longitude);
-                        found = { ...stage, latitude: lat, longitude: lon };
-                      } else {
-                        found = stage || null;
-                      }
-                      setFoundStage(found);
-                      // Aggiorna stato tappa fatta
-                      if (found && racer) {
-                        (async () => {
-                          try {
-                            const params = new URLSearchParams({
-                              action: 'get',
-                              getAction: 'raceLocationDone',
-                              racerId: racer.racerid,
-                              clientId: racer.racerclientid,
-                              raceLocationCode: found.code,
-                            });
-                            const url = `https://crm.1000curve.com/Racer?${params.toString()}`;
-                            const headers = {
-                              'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyW',
-                            };
-                            const response = await fetch(url, { method: 'GET', headers });
-                            const text = await response.text();
-                            let done = false;
-                            try {
-                              const data = text ? JSON.parse(text) : null;
-                              done = data === true || data?.done === true;
-                            } catch {
-                              done = text === 'true';
-                            }
-                            setStageDone(done);
-                          } catch {
-                            setStageDone(null);
-                          }
-                        })();
-                      }
-                    }
-                  },
-                },
-              ]
+              'Hai completato correttamente la tappa.'
             );
-            try {
-              const paramsDone = new URLSearchParams({
-                action: 'get',
-                getAction: 'raceLocationDone',
-                racerId: racer.racerid,
-                clientId: racer.racerclientid,
-                raceLocationCode: foundStage.code,
-              });
-              const urlDone = `https://crm.1000curve.com/Racer?${paramsDone.toString()}`;
-              const responseDone = await fetch(urlDone, { method: 'GET', headers });
-              const textDone = await responseDone.text();
-              let done = false;
-              try {
-                const data = textDone ? JSON.parse(textDone) : null;
-                done = data === true || data?.done === true;
-              } catch {
-                done = textDone === 'true';
-              }
-              setStageDone(done);
-            } catch (e) {
-              setStageDone(null);
-            }
           } else if (text.trim() === 'EXISTS') {
+            setCountdown(null);
             setStageDone(true);
+          } else {
+            setCountdown(null);
           }
         } catch (e) {
           console.error('Errore invio tempo cookie:', e);
+          setCountdown(null);
         }
       })();
       return;
@@ -216,7 +223,9 @@ export default function RaceScreen() {
       console.log('Response:', text);
       
       const data = JSON.parse(text);
+      console.log('[DEBUG] Parsed data:', data);
       if (data.raceLocationTimes) {
+        console.log('[DEBUG] Cookies found:', data.raceLocationTimes);
         setCookiesList(data.raceLocationTimes);
       } else {
         setCookiesList([]);
@@ -264,32 +273,40 @@ export default function RaceScreen() {
       <RaceHeader pilotName={racer.racerfullname} onSidebarPress={handleSidebarOpen} />
       
       {/* Welcome Box with Cookie Logic */}
-      <View style={styles.welcomeBox}>
-        <View style={styles.welcomeContent}>
-          <ThemedText style={styles.welcomeGreeting}>Ciao {racer.racerfullname}!</ThemedText>
-          <ThemedText style={styles.welcomeRace}>Benvenuto alla {parsed.name}</ThemedText>
-          <ThemedText style={styles.welcomeInstruction}>Inserisci il numero del cookie qui sotto</ThemedText>
-          
-          {/* Cookie Code Input */}
-          <View style={styles.searchBox}>
-            <View style={styles.inputContainer}>
-              <Icon name="map-marker" size={20} color="#999" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Codice cookie"
-                value={stageCode}
-                onChangeText={(text) => {
-                  // Filtra solo i numeri
-                  const numericValue = text.replace(/[^0-9]/g, '');
-                  setStageCode(numericValue);
-                }}
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
-              <TouchableOpacity 
-                style={styles.searchButton}
-                disabled={searchingStage}
-                onPress={async () => {
+      <View style={[styles.welcomeBox, isSmallScreen && styles.welcomeBoxSmall]}>
+          <View style={styles.welcomeContent}>
+            {/* Race Name and Timer Row */}
+            <View style={styles.raceNameRow}>
+              <ThemedText style={[styles.welcomeRace, isSmallScreen && styles.welcomeRaceSmall]}>{parsed.name}</ThemedText>
+              {raceTimer && (
+                <View style={[styles.timerContainer, isSmallScreen && styles.timerContainerSmall]}>
+                  <ThemedText style={[styles.timerText, isSmallScreen && styles.timerTextSmall]}>{raceTimer}</ThemedText>
+                </View>
+              )}
+            </View>
+            
+            <ThemedText style={[styles.welcomeInstruction, isSmallScreen && styles.welcomeInstructionSmall]}>Inserisci il numero del cookie qui sotto</ThemedText>
+            
+            {/* Cookie Code Input */}
+            <View style={styles.searchBox}>
+              <View style={[styles.inputContainer, isSmallScreen && styles.inputContainerSmall]}>
+                <Icon name="map-marker" size={isSmallScreen ? 18 : 20} color="#999" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Codice cookie"
+                  value={stageCode}
+                  onChangeText={(text) => {
+                    // Filtra solo i numeri
+                    const numericValue = text.replace(/[^0-9]/g, '');
+                    setStageCode(numericValue);
+                  }}
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                />
+                <TouchableOpacity 
+                  style={[styles.searchButton, isSmallScreen && styles.searchButtonSmall]}
+                  disabled={searchingStage}
+                  onPress={async () => {
                   Keyboard.dismiss(); // Nasconde la tastiera
                   setStageDone(null); // reset stato
                   setSearchingStage(true);
@@ -437,12 +454,12 @@ export default function RaceScreen() {
                         setStageDone(true);
                       } else {
                         // Se il cookie non esiste, inizia il countdown
-                        setCountdown(10);
+                        setCountdown(60);
                       }
                     } catch (error) {
                       console.error('Errore nella verifica finale del cookie:', error);
                       // Se c'è un errore, permettiamo comunque di procedere
-                      setCountdown(10);
+                      setCountdown(60);
                     }
                     setSearchingStage(false);
                     setCookieCheckMessage(null);
@@ -454,6 +471,10 @@ export default function RaceScreen() {
                     { color: stageDone ? '#fff' : '#022C43' }
                   ]}>START</ThemedText>
                 </TouchableOpacity>
+              ) : countdown === 0 ? (
+                <View style={styles.goContainer}>
+                  <ThemedText style={styles.goText}>GO</ThemedText>
+                </View>
               ) : (
                 <View style={styles.countdownContainer}>
                   <ThemedText style={styles.countdownText}>{countdown}</ThemedText>
@@ -482,16 +503,15 @@ export default function RaceScreen() {
         </View>
       )}
 
-
-
       {/* Bottom Drawer */}
       <Animated.View 
         style={[
           styles.drawer,
+          isSmallScreen && styles.drawerSmall,
           {
             height: drawerAnimation.interpolate({
               inputRange: [0, 1],
-              outputRange: [180, screenHeight * 0.8],
+              outputRange: [isSmallScreen ? 140 : 180, screenHeight * 0.8],
             }),
             bottom: drawerAnimation.interpolate({
               inputRange: [0, 1],
@@ -500,20 +520,20 @@ export default function RaceScreen() {
           }
         ]}
       >
-        <View style={styles.drawerContent}>
+        <View style={[styles.drawerContent, isSmallScreen && styles.drawerContentSmall]}>
           <TouchableOpacity 
-            style={styles.roadBookButton}
+            style={[styles.roadBookButton, isSmallScreen && styles.roadBookButtonSmall]}
             onPress={toggleDrawer}
             activeOpacity={0.8}
           >
-            <ThemedText style={styles.roadBookText}>RoadBook</ThemedText>
+            <ThemedText style={styles.roadBookText}>
+              {isDrawerOpen ? 'Chiudi Roadbook' : 'Apri Roadbook'}
+            </ThemedText>
           </TouchableOpacity>
-          
+
           {isDrawerOpen && (
             <View style={styles.drawerBody}>
-              <ThemedText style={styles.drawerTitle}>RoadBook</ThemedText>
-              <ThemedText style={styles.drawerSubtitle}>Lista cookie della gara</ThemedText>
-              
+              {/* Rimossi titolo e sottotitolo */}
               {loadingCookies ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color="#FFD700" />
@@ -529,7 +549,6 @@ export default function RaceScreen() {
                         { backgroundColor: cookie.done ? '#28a745' : '#FFD700' }
                       ]}
                       onPress={() => {
-                        // Inserisci il codice nell'input e chiudi il drawer
                         setStageCode(cookie.code);
                         toggleDrawer();
                       }}
@@ -545,10 +564,22 @@ export default function RaceScreen() {
                           </ThemedText>
                         </View>
                         <View style={styles.cookieInfo}>
+                          <ThemedText style={[
+                            styles.cookieName,
+                            { color: cookie.done ? '#fff' : '#022C43' }
+                          ]}>
+                            {cookie.name || `Cookie ${cookie.code}`}
+                          </ThemedText>
+                          <ThemedText style={[
+                            styles.cookieDescription,
+                            { color: cookie.done ? 'rgba(255,255,255,0.8)' : '#666' }
+                          ]}>
+                            {cookie.description || 'Nessuna descrizione disponibile'}
+                          </ThemedText>
                           <View style={styles.cookieStatus}>
                             <Icon 
                               name={cookie.done ? "check-circle" : "circle-o"} 
-                              size={20} 
+                              size={18} 
                               color={cookie.done ? '#fff' : '#022C43'} 
                             />
                             <ThemedText style={[
@@ -557,13 +588,13 @@ export default function RaceScreen() {
                             ]}>
                               {cookie.done ? 'Completato' : 'Da fare'}
                             </ThemedText>
+                            <ThemedText style={[
+                              styles.cookiePoints,
+                              { color: cookie.done ? '#fff' : '#022C43' }
+                            ]}>
+                              {cookie.points} pt
+                            </ThemedText>
                           </View>
-                          <ThemedText style={[
-                            styles.cookiePoints,
-                            { color: cookie.done ? '#fff' : '#022C43' }
-                          ]}>
-                            {cookie.points} punti
-                          </ThemedText>
                           {cookie.done && cookie.arrivalDate && (
                             <ThemedText style={styles.cookieArrivalDate}>
                               Completato: {cookie.arrivalDate}
@@ -573,7 +604,6 @@ export default function RaceScreen() {
                       </View>
                     </TouchableOpacity>
                   ))}
-                  
                   {cookiesList.length === 0 && (
                     <View style={styles.noCookiesContainer}>
                       <ThemedText style={styles.noCookiesText}>
@@ -610,13 +640,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 3,
     marginBottom: 0,
-    minHeight: '30%',
+    minHeight: '20%',
     width: '100%',
   },
   welcomeContent: {
     width: '100%',
     maxWidth: 400,
     alignItems: 'stretch',
+  },
+  raceNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    paddingHorizontal: 8,
+  },
+  timerContainer: {
+    backgroundColor: '#FFD700',
+    borderRadius: 15,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginLeft: 12,
+    flexShrink: 0,
+  },
+  timerContainerSmall: {
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginLeft: 8,
+  },
+  timerText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#022C43',
+    textAlign: 'center',
+  },
+  timerTextSmall: {
+    fontSize: 12,
   },
   welcomeGreeting: {
     fontSize: 28,
@@ -631,9 +691,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#000',
-    marginBottom: 16,
     textAlign: 'left',
-    paddingHorizontal: 8,
+    flex: 1,
   },
   welcomeInstruction: {
     fontSize: 16,
@@ -641,11 +700,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     textAlign: 'left',
     paddingHorizontal: 8,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    padding: 24,
-    alignItems: 'center',
   },
   garaTitle: {
     marginBottom: 16,
@@ -780,6 +834,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 56,
   },
+  goContainer: {
+    backgroundColor: '#28a745',
+    borderRadius: 8,
+    paddingVertical: 32,
+    paddingHorizontal: 48,
+    marginTop: 16,
+    marginBottom: 8,
+    minWidth: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  goText: {
+    color: '#fff',
+    fontSize: 48,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 56,
+  },
   tooFarContainer: {
     alignItems: 'center',
     marginTop: 16,
@@ -901,20 +973,32 @@ const styles = StyleSheet.create({
   cookieInfo: {
     flex: 1,
   },
+  cookieName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  cookieDescription: {
+    fontSize: 13,
+    marginBottom: 8,
+    lineHeight: 16,
+  },
   cookieStatus: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 5,
   },
   cookieStatusText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    marginLeft: 8,
+    marginLeft: 6,
+    flex: 1,
   },
   cookiePoints: {
     fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 3,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
   cookieArrivalDate: {
     fontSize: 12,
@@ -930,5 +1014,49 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     textAlign: 'center',
+  },
+  // Stili per schermi piccoli
+  welcomeBoxSmall: {
+    padding: 18,
+    paddingTop: 24,
+    minHeight: '25%',
+    borderBottomLeftRadius: 50,
+    borderBottomRightRadius: 50,
+  },
+  welcomeGreetingSmall: {
+    fontSize: 24,
+    paddingTop: 20,
+    marginBottom: 6,
+  },
+  welcomeRaceSmall: {
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  welcomeInstructionSmall: {
+    fontSize: 14,
+    marginBottom: 18,
+  },
+  inputContainerSmall: {
+    paddingVertical: 10,
+    paddingLeft: 14,
+    paddingRight: 6,
+  },
+  searchButtonSmall: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  drawerSmall: {
+    borderTopLeftRadius: 50,
+    borderTopRightRadius: 50,
+  },
+  roadBookButtonSmall: {
+    height: 50,
+    borderRadius: 50,
+    marginBottom: 8,
+  },
+  drawerContentSmall: {
+    paddingTop: 30,
+    paddingHorizontal: 12,
   },
 });
