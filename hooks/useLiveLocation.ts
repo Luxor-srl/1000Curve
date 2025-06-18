@@ -10,23 +10,28 @@ export function useLiveLocation() {
   useEffect(() => {
     let isMounted = true;
     async function startWatch() {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permesso di localizzazione negato');
-        setEnabled(false);
-        return;
-      }
-      setEnabled(true);
-      watchId.current = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.BestForNavigation, // Massima precisione
-          timeInterval: 1000, // Aggiorna ogni 1 secondo
-          distanceInterval: 1, // Aggiorna ogni 1 metro di movimento
-        },
-        (loc) => {
-          if (isMounted) setLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setErrorMsg('Permesso di localizzazione negato');
+          setEnabled(false);
+          return;
         }
-      );
+        setEnabled(true);
+        watchId.current = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.BestForNavigation, // Massima precisione
+            timeInterval: 1000, // Aggiorna ogni 1 secondo
+            distanceInterval: 1, // Aggiorna ogni 1 metro di movimento
+          },
+          (loc) => {
+            if (isMounted) setLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+          }
+        );
+      } catch (error: any) {
+        setErrorMsg('Errore nell\'ottenere la posizione: ' + (error?.message || error));
+        setEnabled(false);
+      }
     }
     startWatch();
     return () => {

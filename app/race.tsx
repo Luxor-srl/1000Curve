@@ -5,10 +5,88 @@ import { useLiveLocation } from '@/hooks/useLiveLocation';
 import { clearAuthData } from '@/utils/auth';
 import { getDistanceFromLatLonInMeters } from '@/utils/geo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Dimensions, Keyboard, Linking, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+// Chiave per i cookie in attesa offline
+const PENDING_COOKIES_KEY = 'pendingCookies';
+// Funzione per aggiungere un cookie alla coda offline
+interface PendingCookie {
+  racerId: string | number;
+  racerClientId: string | number;
+  raceLocationCode: string | number;
+  timestamp: number;
+}
+
+const addPendingCookie = async (cookie: PendingCookie): Promise<void> => {
+  try {
+    const existing = await AsyncStorage.getItem(PENDING_COOKIES_KEY);
+    let arr: PendingCookie[] = [];
+    if (existing) arr = JSON.parse(existing);
+    arr.push(cookie);
+    await AsyncStorage.setItem(PENDING_COOKIES_KEY, JSON.stringify(arr));
+    console.log('[OFFLINE] Cookie aggiunto alla coda:', cookie);
+  } catch (e) {
+    console.error('[OFFLINE] Errore salvataggio cookie offline:', e);
+  }
+};
+
+// Funzione per inviare tutti i cookie in attesa
+const sendPendingCookies = async () => {
+  try {
+    const existing = await AsyncStorage.getItem(PENDING_COOKIES_KEY);
+    if (!existing) return;
+    let arr = JSON.parse(existing);
+    if (!Array.isArray(arr) || arr.length === 0) return;
+    const headers = {
+      'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+      'Accept': '*/*',
+      'Accept-Language': 'it',
+      'Referer': 'https://crm.1000curve.com/app/race.html',
+      'X-Requested-With': 'XMLHttpRequest',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+    };
+    let newArr = [];
+    for (const cookie of arr) {
+      try {
+        const params = new URLSearchParams({
+          action: 'set',
+          setAction: 'setRacerLocationTime',
+          racerId: cookie.racerId,
+          racerClientId: cookie.racerClientId,
+          raceLocationCode: cookie.raceLocationCode,
+          timestamp: String(cookie.timestamp),
+        });
+        const url = `https://crm.1000curve.com/CRMRaceLog?${params.toString()}`;
+        const response = await fetch(url, { method: 'GET', headers, credentials: 'include' });
+        const text = await response.text();
+        if (text.trim() === 'SUCCESS') {
+          console.log('[OFFLINE] Cookie inviato con successo:', cookie);
+        } else {
+          newArr.push(cookie); // Non eliminare se non successo
+        }
+      } catch (e) {
+        newArr.push(cookie); // Mantieni in coda se errore
+      }
+    }
+    await AsyncStorage.setItem(PENDING_COOKIES_KEY, JSON.stringify(newArr));
+  } catch (e) {
+    console.error('[OFFLINE] Errore invio cookie offline:', e);
+  }
+};
+// Effetto: invia i cookie in attesa quando torna online
+useEffect(() => {
+  const unsubscribe = NetInfo.addEventListener(state => {
+    if (state.isConnected) {
+      sendPendingCookies();
+    }
+  });
+  // Prova anche all'avvio
+  sendPendingCookies();
+  return () => unsubscribe();
+}, []);
 // @ts-ignore
 
 export default function RaceScreen() {
@@ -170,54 +248,65 @@ export default function RaceScreen() {
     return () => clearInterval(interval);
   }, [raceInfo]);
 
+  // Hook posizione live: deve stare sopra gli useEffect che la usano
+  const { location } = useLiveLocation();
+  
   // Countdown effect: deve stare qui, fuori dal return!
   useEffect(() => {
     if (countdown === null) return;
     if (countdown === 0) {
-      // Countdown terminato: invia chiamata a /CRMRaceLog
+      // Countdown terminato: invia chiamata a /CRMRaceLog oppure salva offline
       (async () => {
         if (!racer || !foundStage) return;
         try {
-          console.log('Invio tempo cookie a /CRMRaceLog...');
           // Attendi 2 secondi per mostrare il "GO"
           await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          // Timestamp in formato intero, senza stringa
           const timestamp = Date.now();
-          const params = new URLSearchParams({
-            action: 'set',
-            setAction: 'setRacerLocationTime',
-            racerId: racer.racerid,
-            racerClientId: racer.racerclientid,
-            raceLocationCode: foundStage.code,
-            timestamp: String(timestamp),
-          });
-          const url = `https://crm.1000curve.com/CRMRaceLog?${params.toString()}`;
-          const headers = {
-            'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
-            'Accept': '*/*',
-            'Accept-Language': 'it',
-            'Referer': 'https://crm.1000curve.com/app/race.html',
-            'X-Requested-With': 'XMLHttpRequest',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-          };
-          const response = await fetch(url, { method: 'GET', headers, credentials: 'include' });
-          const text = await response.text();
-          console.log('Risposta /CRMRaceLog:', text);
-          if (text.trim() === 'SUCCESS') {
-            // Imposta direttamente la tappa come completata
-            setStageDone(true);
-            setCountdown(null);
-            // Mostra un messaggio di conferma semplice
-            Alert.alert(
-              'Cookie registrato!',
-              'Hai completato correttamente la tappa.'
-            );
-          } else if (text.trim() === 'EXISTS') {
-            setCountdown(null);
-            setStageDone(true);
+          // Controlla se online
+          const netState = await NetInfo.fetch();
+          if (netState.isConnected) {
+            // Online: invia subito
+            const params = new URLSearchParams({
+              action: 'set',
+              setAction: 'setRacerLocationTime',
+              racerId: racer.racerid,
+              racerClientId: racer.racerclientid,
+              raceLocationCode: foundStage.code,
+              timestamp: String(timestamp),
+            });
+            const url = `https://crm.1000curve.com/CRMRaceLog?${params.toString()}`;
+            const headers = {
+              'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+              'Accept': '*/*',
+              'Accept-Language': 'it',
+              'Referer': 'https://crm.1000curve.com/app/race.html',
+              'X-Requested-With': 'XMLHttpRequest',
+              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+            };
+            const response = await fetch(url, { method: 'GET', headers, credentials: 'include' });
+            const text = await response.text();
+            console.log('Risposta /CRMRaceLog:', text);
+            if (text.trim() === 'SUCCESS') {
+              setStageDone(true);
+              setCountdown(null);
+              Alert.alert('Cookie registrato!', 'Hai completato correttamente la tappa.');
+            } else if (text.trim() === 'EXISTS') {
+              setCountdown(null);
+              setStageDone(true);
+            } else {
+              setCountdown(null);
+            }
           } else {
+            // Offline: salva in coda
+            await addPendingCookie({
+              racerId: racer.racerid,
+              racerClientId: racer.racerclientid,
+              raceLocationCode: foundStage.code,
+              timestamp,
+            });
+            setStageDone(true);
             setCountdown(null);
+            Alert.alert('Cookie registrato offline', 'Il cookie verrà inviato automaticamente quando tornerai online.');
           }
         } catch (e) {
           console.error('Errore invio tempo cookie:', e);
@@ -229,7 +318,22 @@ export default function RaceScreen() {
     const timer = setTimeout(() => setCountdown((c) => (typeof c === 'number' && c > 0 ? c - 1 : null)), 1000);
     return () => clearTimeout(timer);
   }, [countdown, racer, foundStage]);
-  const { location } = useLiveLocation();
+
+  // Effetto: interrompi il countdown se ci si allontana oltre 100 metri dal cookie
+  useEffect(() => {
+    if (countdown === null || !foundStage || !location) return;
+    const distance = getDistanceFromLatLonInMeters(
+      location.latitude,
+      location.longitude,
+      Number(foundStage.latitude),
+      Number(foundStage.longitude)
+    );
+    if (distance > 100) {
+      setCountdown(null);
+      setStageDone(null);
+      Alert.alert('Attenzione', 'Ti stai allontanando, torna nella zona del cookie');
+    }
+  }, [location, countdown, foundStage]);
 
   useEffect(() => {
     if (raceData) {
@@ -323,7 +427,7 @@ export default function RaceScreen() {
   const handleSidebarOpen = () => {
     // Logica per aprire la sidebar
     console.log("Apri sidebar");
-    Alert.alert("Sidebar", "Funzionalità sidebar da implementare.");
+    Alert.alert("Sidebar", "Funzionalità sidebar in sviluppo.");
   };
 
   const toggleDrawer = () => {
@@ -503,20 +607,24 @@ export default function RaceScreen() {
               : null
           });
           return (
-            <View style={styles.foundStageContainer}>
+            <ScrollView 
+              style={styles.foundStageScrollView}
+              contentContainerStyle={styles.foundStageContainer}
+              showsVerticalScrollIndicator={false}
+            >
               <ThemedText style={styles.foundStageName}>{foundStage.name}</ThemedText>
-              {location && foundStage.latitude != null && foundStage.longitude != null ? (
+              {stageDone === true ? (
+                <View style={styles.cookieDoneContainer}>
+                  <ThemedText style={styles.cookieDoneText}>Cookie già fatto</ThemedText>
+                </View>
+              ) : location && foundStage.latitude != null && foundStage.longitude != null ? (
                 getDistanceFromLatLonInMeters(
                   location.latitude,
                   location.longitude,
                   Number(foundStage.latitude),
                   Number(foundStage.longitude)
                 ) <= 100 ? (
-                  stageDone === true ? (
-                    <View style={styles.cookieDoneContainer}>
-                      <ThemedText style={styles.cookieDoneText}>Cookie già fatto</ThemedText>
-                    </View>
-                  ) : searchingStage ? (
+                  searchingStage ? (
                     <ActivityIndicator size="large" color="#0a7ea4" style={{ marginTop: 20 }} />
                   ) : countdown === null ? (
                     <TouchableOpacity 
@@ -593,7 +701,7 @@ export default function RaceScreen() {
               ) : (
                 <ThemedText style={styles.noCoordinatesText}>Coordinate tappa non disponibili</ThemedText>
               )}
-            </View>
+            </ScrollView>
           );
         })()
       )}
@@ -859,14 +967,18 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 8,
   },
-  foundStageContainer: {
+  foundStageScrollView: {
     width: '95%',
     maxWidth: 450,
-    alignItems: 'center',
-    marginHorizontal: 'auto',
+    alignSelf: 'center',
     marginTop: 32,
     marginBottom: 24,
-    alignSelf: 'center',
+    maxHeight: 400, // Limita l'altezza per permettere lo scroll
+    paddingBottom: 80, // Spazio extra per non coprire il pulsante START
+  },
+  foundStageContainer: {
+    alignItems: 'center',
+    paddingBottom: 20,
   },
   foundStageName: {
     fontSize: 28,

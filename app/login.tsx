@@ -28,9 +28,9 @@ export default function LoginScreen() {
   }, [location]);
   const iconColor = useThemeColor({}, 'tint');
 
-  // Recupera la gara di oggi all'avvio
+  // Recupera tutte le gare disponibili all'avvio
   React.useEffect(() => {
-    const fetchTodayRace = async () => {
+    const fetchRaces = async () => {
       setLoadingRace(true);
       const headers = {
         'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
@@ -49,27 +49,28 @@ export default function LoginScreen() {
           data.races.forEach((race: any) => {
             console.log(`- ${race.name} (${race.slug}): ${race.startDateDisplayTimestamp}`);
           });
-          // Trova la gara di oggi
-          // Cerca la gara che ha la data di inizio esattamente oggi (ignorando l'orario)
+          // Trova la gara di oggi ESATTAMENTE
           const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
           const found = data.races.find((race: any) => {
             const start = new Date(race.startDateGmtDate);
-            return (
-              start.getFullYear() === today.getFullYear() &&
-              start.getMonth() === today.getMonth() &&
-              start.getDate() === today.getDate()
-            );
+            start.setHours(0, 0, 0, 0);
+            return start.getTime() === today.getTime();
           });
+          
+          console.log('Gara di oggi trovata:', found ? found.name : 'Nessuna gara oggi');
           setTodayRace(found || null);
         } else {
           setTodayRace(null);
         }
       } catch (e) {
+        console.error('Errore nel caricamento gare:', e);
         setTodayRace(null);
       }
       setLoadingRace(false);
     };
-    fetchTodayRace();
+    fetchRaces();
   }, []);
 
   const handleLogin = async () => {
@@ -78,9 +79,10 @@ export default function LoginScreen() {
       return;
     }
     if (!todayRace) {
-      Alert.alert('Errore', 'Nessuna gara disponibile oggi.');
+      Alert.alert('Errore', 'Nessuna gara disponibile oggi. Controlla che ci sia una gara in programma per oggi.');
       return;
     }
+    
     const email = username;
     const number = password;
     const raceSlug = todayRace.slug;
@@ -219,6 +221,8 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               keyboardType="numeric"
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
             />
           </View>
           <ThemedText style={styles.raceNameText}>

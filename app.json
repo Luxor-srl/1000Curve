@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "1000curve",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.1000curve.app",

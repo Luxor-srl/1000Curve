@@ -27,9 +27,20 @@ export default function StartScreen() {
   useEffect(() => {
     const checkExistingAuth = async () => {
       try {
-        const authStatus = await checkAuthStatus();
+        setIsCheckingAuth(true);
+        console.log('Controllo autenticazione in corso...');
         
-        if (authStatus.isAuthenticated && authStatus.raceData) {
+        // Aggiungi un timeout per evitare blocchi infiniti
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout controllo autenticazione')), 10000)
+        );
+        
+        const authCheckPromise = checkAuthStatus();
+        const authStatus = await Promise.race([authCheckPromise, timeoutPromise]) as any;
+        
+        console.log('Stato autenticazione:', authStatus);
+        
+        if (authStatus?.isAuthenticated && authStatus?.raceData) {
           console.log('Utente già autenticato, reindirizzamento...');
           
           // Naviga direttamente alla pagina race
@@ -40,11 +51,15 @@ export default function StartScreen() {
             },
           });
           return;
+        } else {
+          console.log('Utente non autenticato, mostra schermata di avvio');
         }
       } catch (error) {
         console.error('Errore nel controllo autenticazione:', error);
+        // In caso di errore, mostra comunque la schermata di avvio
+      } finally {
+        setIsCheckingAuth(false);
       }
-      setIsCheckingAuth(false);
     };
 
     checkExistingAuth();

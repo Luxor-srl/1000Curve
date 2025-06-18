@@ -8,49 +8,25 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		342A4F1A8F06A3B468A7D12A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 23A522E6D1786B13B9CE98DE /* PrivacyInfo.xcprivacy */; };
+		24E38A38E922D33B8C8A4476 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1B114539A3D3DF1049DAF6C2 /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		6867957E2DFB1D4B00ECC6B4 /* 114.png in Resources */ = {isa = PBXBuildFile; fileRef = 686795782DFB1D4B00ECC6B4 /* 114.png */; };
-		6867957F2DFB1D4B00ECC6B4 /* 58.png in Resources */ = {isa = PBXBuildFile; fileRef = 686795742DFB1D4B00ECC6B4 /* 58.png */; };
-		686795802DFB1D4B00ECC6B4 /* 40.png in Resources */ = {isa = PBXBuildFile; fileRef = 686795722DFB1D4B00ECC6B4 /* 40.png */; };
-		686795812DFB1D4B00ECC6B4 /* 87.png in Resources */ = {isa = PBXBuildFile; fileRef = 686795772DFB1D4B00ECC6B4 /* 87.png */; };
-		686795822DFB1D4B00ECC6B4 /* 80.png in Resources */ = {isa = PBXBuildFile; fileRef = 686795762DFB1D4B00ECC6B4 /* 80.png */; };
-		686795832DFB1D4B00ECC6B4 /* 120.png in Resources */ = {isa = PBXBuildFile; fileRef = 686795792DFB1D4B00ECC6B4 /* 120.png */; };
-		686795842DFB1D4B00ECC6B4 /* 180.png in Resources */ = {isa = PBXBuildFile; fileRef = 6867957A2DFB1D4B00ECC6B4 /* 180.png */; };
-		686795852DFB1D4B00ECC6B4 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 6867957C2DFB1D4B00ECC6B4 /* Contents.json */; };
-		686795862DFB1D4B00ECC6B4 /* 29.png in Resources */ = {isa = PBXBuildFile; fileRef = 686795712DFB1D4B00ECC6B4 /* 29.png */; };
-		686795872DFB1D4B00ECC6B4 /* 1024.png in Resources */ = {isa = PBXBuildFile; fileRef = 6867957B2DFB1D4B00ECC6B4 /* 1024.png */; };
-		686795882DFB1D4B00ECC6B4 /* 60.png in Resources */ = {isa = PBXBuildFile; fileRef = 686795752DFB1D4B00ECC6B4 /* 60.png */; };
-		686795892DFB1D4B00ECC6B4 /* 57.png in Resources */ = {isa = PBXBuildFile; fileRef = 686795732DFB1D4B00ECC6B4 /* 57.png */; };
-		7B097FFD76D16B2B514EF4B0 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 083CC65441DCE4FB341E5370 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		E374CF45FCF3FFDC99C1A817 /* libPods-1000curve.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CCC4FA34D346F6DEF6F56253 /* libPods-1000curve.a */; };
+		CBECAC0984D2045E2933FBF4 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CFD68D83606ED57659DC3 /* ExpoModulesProvider.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		F83E881C4BEEC05CB0C50E65 /* libPods-1000curve.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 882339E2173AA5F3F9CB6F14 /* libPods-1000curve.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		083CC65441DCE4FB341E5370 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-1000curve/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* 1000curve.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = 1000curve.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = 1000curve/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = 1000curve/Info.plist; sourceTree = "<group>"; };
-		23A522E6D1786B13B9CE98DE /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = 1000curve/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		686795712DFB1D4B00ECC6B4 /* 29.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 29.png; sourceTree = "<group>"; };
-		686795722DFB1D4B00ECC6B4 /* 40.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 40.png; sourceTree = "<group>"; };
-		686795732DFB1D4B00ECC6B4 /* 57.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 57.png; sourceTree = "<group>"; };
-		686795742DFB1D4B00ECC6B4 /* 58.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 58.png; sourceTree = "<group>"; };
-		686795752DFB1D4B00ECC6B4 /* 60.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 60.png; sourceTree = "<group>"; };
-		686795762DFB1D4B00ECC6B4 /* 80.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 80.png; sourceTree = "<group>"; };
-		686795772DFB1D4B00ECC6B4 /* 87.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 87.png; sourceTree = "<group>"; };
-		686795782DFB1D4B00ECC6B4 /* 114.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 114.png; sourceTree = "<group>"; };
-		686795792DFB1D4B00ECC6B4 /* 120.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 120.png; sourceTree = "<group>"; };
-		6867957A2DFB1D4B00ECC6B4 /* 180.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 180.png; sourceTree = "<group>"; };
-		6867957B2DFB1D4B00ECC6B4 /* 1024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 1024.png; sourceTree = "<group>"; };
-		6867957C2DFB1D4B00ECC6B4 /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Contents.json; sourceTree = "<group>"; };
-		9A39FDF5DB429F050C16E7E8 /* Pods-1000curve.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-1000curve.release.xcconfig"; path = "Target Support Files/Pods-1000curve/Pods-1000curve.release.xcconfig"; sourceTree = "<group>"; };
-		9FC09EA08FEE17635BB6C37A /* Pods-1000curve.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-1000curve.debug.xcconfig"; path = "Target Support Files/Pods-1000curve/Pods-1000curve.debug.xcconfig"; sourceTree = "<group>"; };
+		1B114539A3D3DF1049DAF6C2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = 1000curve/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		5AB534338B49E01060EA2D61 /* Pods-1000curve.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-1000curve.release.xcconfig"; path = "Target Support Files/Pods-1000curve/Pods-1000curve.release.xcconfig"; sourceTree = "<group>"; };
+		64084D8252A667B2F4D9A8C5 /* Pods-1000curve.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-1000curve.debug.xcconfig"; path = "Target Support Files/Pods-1000curve/Pods-1000curve.debug.xcconfig"; sourceTree = "<group>"; };
+		882339E2173AA5F3F9CB6F14 /* libPods-1000curve.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-1000curve.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = 1000curve/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		CCC4FA34D346F6DEF6F56253 /* libPods-1000curve.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-1000curve.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E59CFD68D83606ED57659DC3 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-1000curve/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = 1000curve/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* 1000curve-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "1000curve-Bridging-Header.h"; path = "1000curve/1000curve-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -61,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E374CF45FCF3FFDC99C1A817 /* libPods-1000curve.a in Frameworks */,
+				F83E881C4BEEC05CB0C50E65 /* libPods-1000curve.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,54 +53,27 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				23A522E6D1786B13B9CE98DE /* PrivacyInfo.xcprivacy */,
+				1B114539A3D3DF1049DAF6C2 /* PrivacyInfo.xcprivacy */,
 			);
 			name = 1000curve;
-			sourceTree = "<group>";
-		};
-		1BD5760705B3E1B27B1E5D17 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				9FC09EA08FEE17635BB6C37A /* Pods-1000curve.debug.xcconfig */,
-				9A39FDF5DB429F050C16E7E8 /* Pods-1000curve.release.xcconfig */,
-			);
-			path = Pods;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				CCC4FA34D346F6DEF6F56253 /* libPods-1000curve.a */,
+				882339E2173AA5F3F9CB6F14 /* libPods-1000curve.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		6867957D2DFB1D4B00ECC6B4 /* AppIcon.appiconset */ = {
+		602D75700159A144E5FAFDFC /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				686795712DFB1D4B00ECC6B4 /* 29.png */,
-				686795722DFB1D4B00ECC6B4 /* 40.png */,
-				686795732DFB1D4B00ECC6B4 /* 57.png */,
-				686795742DFB1D4B00ECC6B4 /* 58.png */,
-				686795752DFB1D4B00ECC6B4 /* 60.png */,
-				686795762DFB1D4B00ECC6B4 /* 80.png */,
-				686795772DFB1D4B00ECC6B4 /* 87.png */,
-				686795782DFB1D4B00ECC6B4 /* 114.png */,
-				686795792DFB1D4B00ECC6B4 /* 120.png */,
-				6867957A2DFB1D4B00ECC6B4 /* 180.png */,
-				6867957B2DFB1D4B00ECC6B4 /* 1024.png */,
-				6867957C2DFB1D4B00ECC6B4 /* Contents.json */,
+				64084D8252A667B2F4D9A8C5 /* Pods-1000curve.debug.xcconfig */,
+				5AB534338B49E01060EA2D61 /* Pods-1000curve.release.xcconfig */,
 			);
-			path = AppIcon.appiconset;
-			sourceTree = "<group>";
-		};
-		7AD702CCACF59FAF2C0A5D4D /* 1000curve */ = {
-			isa = PBXGroup;
-			children = (
-				083CC65441DCE4FB341E5370 /* ExpoModulesProvider.swift */,
-			);
-			name = 1000curve;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -141,9 +90,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				1BD5760705B3E1B27B1E5D17 /* Pods */,
-				FCC4A36E18FEE969528ED5AD /* ExpoModulesProviders */,
-				6867957D2DFB1D4B00ECC6B4 /* AppIcon.appiconset */,
+				602D75700159A144E5FAFDFC /* Pods */,
+				DAB44DFB30FA250008924C94 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -167,12 +115,20 @@
 			path = 1000curve/Supporting;
 			sourceTree = "<group>";
 		};
-		FCC4A36E18FEE969528ED5AD /* ExpoModulesProviders */ = {
+		DAB44DFB30FA250008924C94 /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				7AD702CCACF59FAF2C0A5D4D /* 1000curve */,
+				F6966BAA08891BF768003C08 /* 1000curve */,
 			);
 			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
+		F6966BAA08891BF768003C08 /* 1000curve */ = {
+			isa = PBXGroup;
+			children = (
+				E59CFD68D83606ED57659DC3 /* ExpoModulesProvider.swift */,
+			);
+			name = 1000curve;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -183,13 +139,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "1000curve" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				B22C054C6BC8EC8E8CCACC71 /* [Expo] Configure project */,
+				2A82055F895975B40528B316 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				BA9CF9543AA8BA44EE79DC41 /* [CP] Embed Pods Frameworks */,
+				6F985505A11EBF77B8A29B5F /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -206,8 +162,7 @@
 		83CBB9F71A601CBA00E9B192 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1640;
+				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1250;
@@ -239,20 +194,8 @@
 			files = (
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
-				6867957E2DFB1D4B00ECC6B4 /* 114.png in Resources */,
-				6867957F2DFB1D4B00ECC6B4 /* 58.png in Resources */,
-				686795802DFB1D4B00ECC6B4 /* 40.png in Resources */,
-				686795812DFB1D4B00ECC6B4 /* 87.png in Resources */,
-				686795822DFB1D4B00ECC6B4 /* 80.png in Resources */,
-				686795832DFB1D4B00ECC6B4 /* 120.png in Resources */,
-				686795842DFB1D4B00ECC6B4 /* 180.png in Resources */,
-				686795852DFB1D4B00ECC6B4 /* Contents.json in Resources */,
-				686795862DFB1D4B00ECC6B4 /* 29.png in Resources */,
-				686795872DFB1D4B00ECC6B4 /* 1024.png in Resources */,
-				686795882DFB1D4B00ECC6B4 /* 60.png in Resources */,
-				686795892DFB1D4B00ECC6B4 /* 57.png in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				342A4F1A8F06A3B468A7D12A /* PrivacyInfo.xcprivacy in Resources */,
+				24E38A38E922D33B8C8A4476 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -294,6 +237,43 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		2A82055F895975B40528B316 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-1000curve/expo-configure-project.sh\"\n";
+		};
+		6F985505A11EBF77B8A29B5F /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-1000curve/Pods-1000curve-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-1000curve/Pods-1000curve-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
@@ -376,43 +356,6 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-1000curve/Pods-1000curve-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		B22C054C6BC8EC8E8CCACC71 /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-1000curve/expo-configure-project.sh\"\n";
-		};
-		BA9CF9543AA8BA44EE79DC41 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-1000curve/Pods-1000curve-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-1000curve/Pods-1000curve-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -421,7 +364,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				7B097FFD76D16B2B514EF4B0 /* ExpoModulesProvider.swift in Sources */,
+				CBECAC0984D2045E2933FBF4 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -430,12 +373,13 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9FC09EA08FEE17635BB6C37A /* Pods-1000curve.debug.xcconfig */;
+			baseConfigurationReference = 64084D8252A667B2F4D9A8C5 /* Pods-1000curve.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = 1000curve/1000curve.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H3JUZXZVDT;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -455,23 +399,28 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.1000curve.app;
-				PRODUCT_NAME = "1000curve";
+				PRODUCT_NAME = 1000curve;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "1000curve/1000curve-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Debug;
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9A39FDF5DB429F050C16E7E8 /* Pods-1000curve.release.xcconfig */;
+			baseConfigurationReference = 5AB534338B49E01060EA2D61 /* Pods-1000curve.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = 1000curve/1000curve.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H3JUZXZVDT;
 				INFOPLIST_FILE = 1000curve/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -486,10 +435,14 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.1000curve.app;
-				PRODUCT_NAME = "1000curve";
+				PRODUCT_NAME = 1000curve;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "1000curve/1000curve-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
@@ -517,7 +470,6 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -525,10 +477,8 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
-				DEVELOPMENT_TEAM = H3JUZXZVDT;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -583,7 +533,6 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -591,10 +540,8 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
-				DEVELOPMENT_TEAM = H3JUZXZVDT;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -613,7 +560,6 @@
 				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
-				SWIFT_COMPILATION_MODE = wholemodule;
 				USE_HERMES = true;
 				VALIDATE_PRODUCT = YES;
 			};

@@ -98,7 +98,7 @@ export const getAuthData = async (): Promise<AuthState> => {
 };
 
 /**
- * Verifica se la gara è ancora valida (non scaduta da più di 24 ore)
+ * Verifica se la gara è ancora valida e se è iniziata oggi
  */
 export const isRaceValid = async (raceSlug: string): Promise<boolean> => {
   try {
@@ -116,18 +116,40 @@ export const isRaceValid = async (raceSlug: string): Promise<boolean> => {
     if (data && Array.isArray(data.races)) {
       const currentRace = data.races.find((race: any) => race.slug === raceSlug);
       if (currentRace) {
-        const now = new Date().getTime();
-        const finishTime = currentRace.finishDateTimestamp;
+        const now = new Date();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         
-        // La gara è valida se non è finita da più di 24 ore
-        return now <= finishTime + (24 * 60 * 60 * 1000);
+        const startTime = currentRace.startDateTimestamp;
+        const finishTime = currentRace.finishDateTimestamp;
+        const startDate = new Date(currentRace.startDateGmtDate);
+        startDate.setHours(0, 0, 0, 0);
+        
+        console.log('=== RACE VALIDITY CHECK ===');
+        console.log('Race name:', currentRace.name);
+        console.log('Race start date:', currentRace.startDateGmtDate);
+        console.log('Today:', today.toISOString().split('T')[0]);
+        console.log('Start date matches today:', startDate.getTime() === today.getTime());
+        
+        // La gara è valida se:
+        // 1. È iniziata oggi (confronto solo date, non orari)
+        // 2. E non è finita da più di 24 ore
+        const isStartedToday = startDate.getTime() === today.getTime();
+        const isNotExpired = now.getTime() <= finishTime + (24 * 60 * 60 * 1000);
+        
+        console.log('Is started today:', isStartedToday);
+        console.log('Is not expired:', isNotExpired);
+        console.log('Race valid:', isStartedToday && isNotExpired);
+        console.log('========================');
+        
+        return isStartedToday && isNotExpired;
       }
     }
     return false;
   } catch (error) {
     console.warn('Errore nel controllo validità gara:', error);
-    // In caso di errore di rete, consideriamo la gara valida per non bloccare l'utente
-    return true;
+    // In caso di errore di rete, consideriamo la gara NON valida per sicurezza
+    return false;
   }
 };
 

@@ -48,11 +48,11 @@
       <true/>
     </dict>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <string>Abbiamo bisogno della tua posizione anche in background per fornire aggiornamenti continui.</string>
     <key>NSLocationAlwaysUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <string>Abbiamo bisogno della tua posizione sempre per garantire il corretto funzionamento dell'app.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <string>Abbiamo bisogno della tua posizione per mostrare la tua posizione sulla mappa e fornire funzionalità di tracciamento.</string>
     <key>NSMotionUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your device motion</string>
     <key>NSUserActivityTypes</key>
