@@ -126,21 +126,21 @@ export default function StartScreen() {
       
       <View style={styles.centerContent}>
         <Image source={require('../assets/images/logo-mille-dark.png')} style={styles.logo} resizeMode="contain"/>
-        <Text style={styles.hashtag}>#NOWFORALL</Text>
+        <Text style={styles.hashtag} allowFontScaling={false}>#NOWFORALL</Text>
       </View>
       
       {isCheckingAuth ? (
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Verifica autenticazione...</Text>
+          <Text style={styles.loadingText} allowFontScaling={false}>Verifica autenticazione...</Text>
         </View>
       ) : (
         <View style={styles.swiperContainer}>
           <View style={styles.swiperBg}>
-            <Text style={styles.swiperText}>Entra nel Mito</Text>
+            <Text style={styles.swiperText} allowFontScaling={false}>Entra nel Mito</Text>
 
             {/* Frecce animate per indicare lo scorrimento */}
             <Animated.View style={[styles.arrowContainer, arrowOpacity]}>
-              <Text style={styles.arrow}>›››</Text>
+              <Text style={styles.arrow} allowFontScaling={false}>›››</Text>
             </Animated.View>
 
             <PanGestureHandler onGestureEvent={gestureHandler} enabled={!unlocked}>

@@ -419,7 +419,7 @@ export default function RaceScreen() {
   if (!parsed || !racer) {
     return (
       <ThemedView style={styles.container}>
-        <ThemedText>Caricamento...</ThemedText>
+        <ThemedText allowFontScaling={false}>Caricamento...</ThemedText>
       </ThemedView>
     );
   }
@@ -455,15 +455,15 @@ export default function RaceScreen() {
           <View style={styles.welcomeContent}>
             {/* Race Name and Timer Row */}
             <View style={styles.raceNameRow}>
-              <ThemedText style={[styles.welcomeRace, isSmallScreen && styles.welcomeRaceSmall]}>{parsed.name}</ThemedText>
+              <ThemedText style={[styles.welcomeRace, isSmallScreen && styles.welcomeRaceSmall]} allowFontScaling={false}>{parsed.name}</ThemedText>
               {raceTimer && (
                 <View style={[styles.timerContainer, isSmallScreen && styles.timerContainerSmall]}>
-                  <ThemedText style={[styles.timerText, isSmallScreen && styles.timerTextSmall]}>{raceTimer}</ThemedText>
+                  <ThemedText style={[styles.timerText, isSmallScreen && styles.timerTextSmall]} allowFontScaling={false}>{raceTimer}</ThemedText>
                 </View>
               )}
             </View>
             
-            <ThemedText style={[styles.welcomeInstruction, isSmallScreen && styles.welcomeInstructionSmall]}>Inserisci il numero del cookie qui sotto</ThemedText>
+            <ThemedText style={[styles.welcomeInstruction, isSmallScreen && styles.welcomeInstructionSmall]} allowFontScaling={false}>Inserisci il numero del cookie qui sotto</ThemedText>
             
             {/* Cookie Code Input */}
             <View style={styles.searchBox}>
@@ -581,7 +581,7 @@ export default function RaceScreen() {
         {cookieCheckMessage && (
           <View style={styles.checkMessageBox}>
             <ActivityIndicator size="small" color="#0a7ea4" style={{ marginRight: 8 }} />
-            <ThemedText>{cookieCheckMessage}</ThemedText>
+            <ThemedText allowFontScaling={false}>{cookieCheckMessage}</ThemedText>
           </View>
         )}
         </View>
@@ -612,10 +612,10 @@ export default function RaceScreen() {
               contentContainerStyle={styles.foundStageContainer}
               showsVerticalScrollIndicator={false}
             >
-              <ThemedText style={styles.foundStageName}>{foundStage.name}</ThemedText>
+              <ThemedText style={styles.foundStageName} allowFontScaling={false}>{foundStage.name}</ThemedText>
               {stageDone === true ? (
                 <View style={styles.cookieDoneContainer}>
-                  <ThemedText style={styles.cookieDoneText}>Cookie già fatto</ThemedText>
+                  <ThemedText style={styles.cookieDoneText} allowFontScaling={false}>Cookie già fatto</ThemedText>
                 </View>
               ) : location && foundStage.latitude != null && foundStage.longitude != null ? (
                 getDistanceFromLatLonInMeters(
@@ -670,20 +670,20 @@ export default function RaceScreen() {
                       <ThemedText style={[
                         styles.startButtonText,
                         { color: stageDone ? '#fff' : '#022C43' }
-                      ]}>START</ThemedText>
+                      ]} allowFontScaling={false}>START</ThemedText>
                     </TouchableOpacity>
                   ) : countdown === 0 ? (
                     <View style={styles.goContainer}>
-                      <ThemedText style={styles.goText}>GO</ThemedText>
+                      <ThemedText style={styles.goText} allowFontScaling={false}>GO</ThemedText>
                     </View>
                   ) : (
                     <View style={styles.countdownContainer}>
-                      <ThemedText style={styles.countdownText}>{countdown}</ThemedText>
+                      <ThemedText style={styles.countdownText} allowFontScaling={false}>{countdown}</ThemedText>
                     </View>
                   )
                 ) : (
                   <View style={styles.tooFarContainer}>
-                    <ThemedText style={styles.tooFarText}>
+                    <ThemedText style={styles.tooFarText} allowFontScaling={false}>
                       Sei ancora lontano dal cookie. Recati qui:
                     </ThemedText>
                     <TouchableOpacity
@@ -694,12 +694,12 @@ export default function RaceScreen() {
                       }}
                       activeOpacity={0.8}
                     >
-                      <ThemedText style={styles.mapsButtonText}>Apri in Google Maps</ThemedText>
+                      <ThemedText style={styles.mapsButtonText} allowFontScaling={false}>Apri in Google Maps</ThemedText>
                     </TouchableOpacity>
                   </View>
                 )
               ) : (
-                <ThemedText style={styles.noCoordinatesText}>Coordinate tappa non disponibili</ThemedText>
+                <ThemedText style={styles.noCoordinatesText} allowFontScaling={false}>Coordinate tappa non disponibili</ThemedText>
               )}
             </ScrollView>
           );
@@ -729,18 +729,25 @@ export default function RaceScreen() {
             onPress={toggleDrawer}
             activeOpacity={0.8}
           >
-            <ThemedText style={styles.roadBookText}>
+            <ThemedText style={styles.roadBookText} allowFontScaling={false}>
               {isDrawerOpen ? 'Chiudi Roadbook' : 'Apri Roadbook'}
             </ThemedText>
           </TouchableOpacity>
 
           {isDrawerOpen && (
             <View style={styles.drawerBody}>
-              {/* Rimossi titolo e sottotitolo */}
+              {/* Contatore totale curve */}
+              {!loadingCookies && (
+                <View style={styles.totalCurvesContainer}>
+                  <ThemedText style={styles.totalCurvesText} allowFontScaling={false}>
+                    Curve completate: {cookiesList.filter(cookie => cookie.done).reduce((total, cookie) => total + (cookie.points || 0), 0)} / {cookiesList.reduce((total, cookie) => total + (cookie.points || 0), 0)}
+                  </ThemedText>
+                </View>
+              )}
               {loadingCookies ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color="#FFD700" />
-                  <ThemedText style={styles.loadingText}>Caricamento...</ThemedText>
+                  <ThemedText style={styles.loadingText} allowFontScaling={false}>Caricamento...</ThemedText>
                 </View>
               ) : (
                 <ScrollView style={styles.cookiesScrollView} showsVerticalScrollIndicator={false}>
@@ -762,7 +769,7 @@ export default function RaceScreen() {
                           <ThemedText style={[
                             styles.cookieCode,
                             { color: cookie.done ? '#fff' : '#022C43' }
-                          ]}>
+                          ]} allowFontScaling={false}>
                             {cookie.code}
                           </ThemedText>
                         </View>
@@ -770,13 +777,13 @@ export default function RaceScreen() {
                           <ThemedText style={[
                             styles.cookieName,
                             { color: cookie.done ? '#fff' : '#022C43' }
-                          ]}>
+                          ]} allowFontScaling={false}>
                             {cookie.name || `Cookie ${cookie.code}`}
                           </ThemedText>
                           <ThemedText style={[
                             styles.cookieDescription,
                             { color: cookie.done ? 'rgba(255,255,255,0.8)' : '#666' }
-                          ]}>
+                          ]} allowFontScaling={false}>
                             {cookie.description || 'Nessuna descrizione disponibile'}
                           </ThemedText>
                           <View style={styles.cookieStatus}>
@@ -788,18 +795,18 @@ export default function RaceScreen() {
                             <ThemedText style={[
                               styles.cookieStatusText,
                               { color: cookie.done ? '#fff' : '#022C43' }
-                            ]}>
+                            ]} allowFontScaling={false}>
                               {cookie.done ? 'Completato' : 'Da fare'}
                             </ThemedText>
                             <ThemedText style={[
                               styles.cookiePoints,
                               { color: cookie.done ? '#fff' : '#022C43' }
-                            ]}>
-                              {cookie.points} pt
+                            ]} allowFontScaling={false}>
+                              {cookie.points} curve
                             </ThemedText>
                           </View>
                           {cookie.done && cookie.arrivalDate && (
-                            <ThemedText style={styles.cookieArrivalDate}>
+                            <ThemedText style={styles.cookieArrivalDate} allowFontScaling={false}>
                               Completato: {cookie.arrivalDate}
                             </ThemedText>
                           )}
@@ -809,7 +816,7 @@ export default function RaceScreen() {
                   ))}
                   {cookiesList.length === 0 && (
                     <View style={styles.noCookiesContainer}>
-                      <ThemedText style={styles.noCookiesText}>
+                      <ThemedText style={styles.noCookiesText} allowFontScaling={false}>
                         Nessun cookie disponibile
                       </ThemedText>
                     </View>
@@ -985,7 +992,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#022C43',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 10, // Reduced from 24 to 10
     paddingHorizontal: 12,
     lineHeight: 34,
     flexWrap: 'wrap',
@@ -1061,19 +1068,20 @@ const styles = StyleSheet.create({
   },
   tooFarContainer: {
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 8, // Reduced from 16 to 8
   },
   tooFarText: {
     color: '#d00',
-    marginBottom: 16,
+    marginBottom: 8, // Reduced from 16 to 8
     textAlign: 'center',
     fontSize: 16,
   },
   mapsButton: {
     backgroundColor: '#FFD700',
     borderRadius: 30,
-    paddingVertical: 12,
+    paddingVertical: 10, // Reduced from 12 to 10
     paddingHorizontal: 24,
+    marginTop: 4, // Add a small top margin
   },
   mapsButtonText: {
     color: '#022C43',
@@ -1220,6 +1228,19 @@ const styles = StyleSheet.create({
   noCookiesText: {
     color: '#FFFFFF',
     fontSize: 16,
+    textAlign: 'center',
+  },
+  totalCurvesContainer: {
+    backgroundColor: '#FFD700',
+    borderRadius: 15,
+    padding: 12,
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  totalCurvesText: {
+    color: '#022C43',
+    fontSize: 16,
+    fontWeight: 'bold',
     textAlign: 'center',
   },
   // Stili per schermi piccoli

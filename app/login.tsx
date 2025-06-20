@@ -192,7 +192,7 @@ export default function LoginScreen() {
       >
         {/* Riquadro arrotondato con scritta */}
         <TouchableOpacity style={styles.roundedBox} activeOpacity={0.85}>
-          <ThemedText style={styles.roundedBoxText}>Partecipa alla gara</ThemedText>
+          <ThemedText style={styles.roundedBoxText} allowFontScaling={false}>Partecipa alla gara</ThemedText>
         </TouchableOpacity>
         {/* Input e info gara */}
         <View style={styles.inputsContainer}>
@@ -225,7 +225,7 @@ export default function LoginScreen() {
               onSubmitEditing={handleLogin}
             />
           </View>
-          <ThemedText style={styles.raceNameText}>
+          <ThemedText style={styles.raceNameText} allowFontScaling={false}>
             {loadingRace ? 'Caricamento gara...' : (todayRace ? todayRace.name : 'Nessuna gara oggi')}
           </ThemedText>
         </View>
@@ -235,7 +235,7 @@ export default function LoginScreen() {
           onPress={handleLogin}
           disabled={!enabled}
         >
-          <ThemedText style={styles.loginButtonText}>Accedi</ThemedText>
+          <ThemedText style={styles.loginButtonText} allowFontScaling={false}>Accedi</ThemedText>
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </ThemedView>
