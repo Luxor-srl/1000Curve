@@ -15,6 +15,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [todayRace, setTodayRace] = useState<any>(null);
   const [loadingRace, setLoadingRace] = useState(true);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
   const { location, enabled, errorMsg } = useLiveLocation();
 
@@ -74,6 +75,8 @@ export default function LoginScreen() {
   }, []);
 
   const handleLogin = async () => {
+    if (isLoggingIn) return; // Previene doppi click
+    
     if (!enabled) {
       Alert.alert('Geolocalizzazione richiesta', 'Attiva la geolocalizzazione per effettuare il login.');
       return;
@@ -82,6 +85,8 @@ export default function LoginScreen() {
       Alert.alert('Errore', 'Nessuna gara disponibile oggi. Controlla che ci sia una gara in programma per oggi.');
       return;
     }
+    
+    setIsLoggingIn(true);
     
     const email = username;
     const number = password;
@@ -128,7 +133,7 @@ export default function LoginScreen() {
         dataRacer = { error: 'Risposta non in formato JSON', raw: textRacer };
       }
       if (!dataRacer || !dataRacer.id || !dataRacer.clientId) {
-        Alert.alert('Errore', 'Impossibile avviare la sessione di gara.');
+        Alert.alert('Errore', 'Email o numero pettorale non validi. Verifica i dati inseriti.');
         return;
       }
       // Salva i dati del racer per uso futuro
@@ -172,6 +177,8 @@ export default function LoginScreen() {
       // Stampa il motivo dell'errore in console
       console.error('Errore durante la chiamata API:', error);
       Alert.alert('Errore', 'Errore durante il login o la chiamata API.');
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -208,6 +215,7 @@ export default function LoginScreen() {
               onChangeText={setUsername}
               autoCapitalize="none"
               keyboardType="email-address"
+              returnKeyType="next"
             />
           </View>
           <View style={styles.inputWrapper}>
@@ -231,11 +239,13 @@ export default function LoginScreen() {
         </View>
         {/* Pulsante Accedi */}
         <TouchableOpacity
-          style={[styles.loginButton, !enabled && { opacity: 0.5 }]}
+          style={[styles.loginButton, (!enabled || isLoggingIn) && { opacity: 0.5 }]}
           onPress={handleLogin}
-          disabled={!enabled}
+          disabled={!enabled || isLoggingIn}
         >
-          <ThemedText style={styles.loginButtonText} allowFontScaling={false}>Accedi</ThemedText>
+          <ThemedText style={styles.loginButtonText} allowFontScaling={false}>
+            {isLoggingIn ? 'Accesso in corso...' : 'Accedi'}
+          </ThemedText>
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </ThemedView>

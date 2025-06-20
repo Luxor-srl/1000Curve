@@ -786,6 +786,19 @@ export default function RaceScreen() {
                           ]} allowFontScaling={false}>
                             {cookie.description || 'Nessuna descrizione disponibile'}
                           </ThemedText>
+                          {cookie.address && (
+                            <ThemedText style={[
+                              styles.cookieAddress,
+                              { color: cookie.done ? 'rgba(255,255,255,0.7)' : '#555' }
+                            ]} allowFontScaling={false}>
+                              📍 {[
+                                cookie.address.address1,
+                                cookie.address.postcode,
+                                cookie.address.cityTownVillage,
+                                cookie.address.zone
+                              ].filter(Boolean).join(', ')}
+                            </ThemedText>
+                          )}
                           <View style={styles.cookieStatus}>
                             <Icon 
                               name={cookie.done ? "check-circle" : "circle-o"} 
@@ -1197,6 +1210,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 8,
     lineHeight: 16,
+  },
+  cookieAddress: {
+    fontSize: 12,
+    marginBottom: 8,
+    lineHeight: 15,
+    fontStyle: 'italic',
   },
   cookieStatus: {
     flexDirection: 'row',
