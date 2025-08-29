@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Dimensions, Keyboard, Linking, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, AppState, Dimensions, Keyboard, Linking, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 // Chiave per i cookie in attesa offline
 const PENDING_COOKIES_KEY = 'pendingCookies';
@@ -250,6 +250,106 @@ export default function RaceScreen() {
 
   // Hook posizione live: deve stare sopra gli useEffect che la usano
   const { location } = useLiveLocation();
+  
+  // Auto-logout quando l'app va in background per troppo tempo
+  const backgroundTimeRef = useRef<number | null>(null);
+  const logoutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        // App va in background: inizia il timer
+        console.log('Rilevato background, avvio timer logout...');
+        backgroundTimeRef.current = Date.now();
+        
+        // Imposta timeout per logout automatico (10 secondi per test)
+        logoutTimeoutRef.current = setTimeout(async () => {
+          console.log('Auto logout eseguito dopo timeout');
+          try {
+            await clearAuthData();
+            // Non possiamo navigare direttamente qui perché l'app è in background
+            // La navigazione avverrà quando l'app tornerà in foreground
+          } catch (error) {
+            console.error('Errore durante auto-logout:', error);
+          }
+        }, 10000); // 10 secondi per test
+        
+      } else if (nextAppState === 'active') {
+        // App torna in foreground
+        console.log('App returning to foreground');
+        
+        // Prima verifica se i dati di autenticazione esistono ancora
+        const checkAuth = async () => {
+          try {
+            const racerDataString = await AsyncStorage.getItem('racerData');
+            if (!racerDataString) {
+              // I dati sono stati rimossi (probabilmente dal timeout), naviga al login
+              console.log('Auth data not found, redirecting to login...');
+              router.replace('/');
+              return;
+            }
+          } catch (error) {
+            console.error('Errore verifica auth data:', error);
+            router.replace('/');
+            return;
+          }
+        };
+        
+        if (backgroundTimeRef.current && logoutTimeoutRef.current) {
+          const backgroundDuration = Date.now() - backgroundTimeRef.current;
+          console.log(`Durata del background: ${backgroundDuration}ms`);
+          
+          if (backgroundDuration >= 10000) {
+            // Se è stato in background per più di 10 secondi, fai logout
+            console.log('Troppo tempo in background, effettuando logout...');
+            clearTimeout(logoutTimeoutRef.current);
+            
+            Alert.alert(
+              'Sessione scaduta',
+              'L\'app è stata in background troppo a lungo. Per motivi di sicurezza, effettua nuovamente il login.',
+              [
+                {
+                  text: 'OK',
+                  onPress: async () => {
+                    try {
+                      await clearAuthData();
+                      router.replace('/');
+                    } catch (error) {
+                      console.error('Errore durante logout:', error);
+                      router.replace('/');
+                    }
+                  },
+                },
+              ],
+              { cancelable: false }
+            );
+          } else {
+            // Cancella il timeout se torniamo in tempo
+            clearTimeout(logoutTimeoutRef.current);
+          }
+        } else {
+          // Se non c'è background time ma l'app sta tornando attiva, 
+          // verifica comunque l'auth (potrebbe essere stato rimosso dal timeout)
+          checkAuth();
+        }
+        
+        // Reset dei riferimenti
+        backgroundTimeRef.current = null;
+        logoutTimeoutRef.current = null;
+      }
+    };
+
+    // Aggiungi il listener per AppState
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    // Cleanup
+    return () => {
+      subscription?.remove();
+      if (logoutTimeoutRef.current) {
+        clearTimeout(logoutTimeoutRef.current);
+      }
+    };
+  }, [router]);
   
   // Countdown effect: deve stare qui, fuori dal return!
   useEffect(() => {
