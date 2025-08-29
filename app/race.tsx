@@ -254,10 +254,21 @@ export default function RaceScreen() {
   // Auto-logout quando l'app va in background per troppo tempo
   const backgroundTimeRef = useRef<number | null>(null);
   const logoutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownCancelledRef = useRef<boolean>(false);
   
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'background' || nextAppState === 'inactive') {
+        // Se il countdown è attivo, annullalo e mostra un avviso
+        if (countdown !== null && countdown > 0) {
+          console.log('App in background durante countdown - annullamento processo');
+          setCountdown(null);
+          setStageDone(null);
+          countdownCancelledRef.current = true;
+          
+          return; // Non avviare il timer di logout se stiamo annullando il countdown
+        }
+        
         // App va in background: inizia il timer
         console.log('Rilevato background, avvio timer logout...');
         backgroundTimeRef.current = Date.now();
@@ -277,6 +288,18 @@ export default function RaceScreen() {
       } else if (nextAppState === 'active') {
         // App torna in foreground
         console.log('App returning to foreground');
+        
+        // Se il countdown è stato cancellato, mostra l'alert
+        if (countdownCancelledRef.current) {
+          countdownCancelledRef.current = false;
+          setTimeout(() => {
+            Alert.alert(
+              'Processo annullato',
+              'La registrazione del cookie è stata annullata perché hai messo l\'app in background. Per completare la registrazione, mantieni l\'app in primo piano durante tutto il processo.',
+              [{ text: 'Ho capito', style: 'default' }]
+            );
+          }, 500);
+        }
         
         // Prima verifica se i dati di autenticazione esistono ancora
         const checkAuth = async () => {
@@ -349,7 +372,7 @@ export default function RaceScreen() {
         clearTimeout(logoutTimeoutRef.current);
       }
     };
-  }, [router]);
+  }, [router, countdown]);
   
   // Countdown effect: deve stare qui, fuori dal return!
   useEffect(() => {
