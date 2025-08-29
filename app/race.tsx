@@ -262,7 +262,7 @@ export default function RaceScreen() {
         console.log('Rilevato background, avvio timer logout...');
         backgroundTimeRef.current = Date.now();
         
-        // Imposta timeout per logout automatico (10 secondi per test)
+        // Imposta timeout per logout automatico (2 ore)
         logoutTimeoutRef.current = setTimeout(async () => {
           console.log('Auto logout eseguito dopo timeout');
           try {
@@ -272,7 +272,7 @@ export default function RaceScreen() {
           } catch (error) {
             console.error('Errore durante auto-logout:', error);
           }
-        }, 10000); // 10 secondi per test
+        }, 7200000); // 2 ore (7200000 ms)
         
       } else if (nextAppState === 'active') {
         // App torna in foreground
@@ -299,8 +299,8 @@ export default function RaceScreen() {
           const backgroundDuration = Date.now() - backgroundTimeRef.current;
           console.log(`Durata del background: ${backgroundDuration}ms`);
           
-          if (backgroundDuration >= 10000) {
-            // Se è stato in background per più di 10 secondi, fai logout
+          if (backgroundDuration >= 7200000) {
+            // Se è stato in background per più di 2 ore, fai logout
             console.log('Troppo tempo in background, effettuando logout...');
             clearTimeout(logoutTimeoutRef.current);
             
