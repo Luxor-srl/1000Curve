@@ -73,7 +73,7 @@ export default function Sidebar({ isVisible, onClose }: SidebarProps) {
           
           <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); console.log('Lista delle gare pressed'); }}>
             <Ionicons name="list-outline" size={20} color="#000" style={styles.menuIcon} />
-            <ThemedText style={styles.menuText}>Lista delle gare</ThemedText>
+            <ThemedText style={styles.menuText}>Lista delle Run</ThemedText>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); console.log('Passa alla Run pressed'); }}>
