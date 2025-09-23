@@ -1,47 +1,94 @@
-# 1000curve App
+# 🚗 1000curve App
 
-Questa è un'app React Native/Expo per la gestione delle tappe e dei "cookie" della gara 1000curve.
+![Logo 1000curve](assets/images/1000curve_logo.png)
 
-## Funzionalità principali
+Un'app React Native/Expo per gestire le tappe e i "cookie" della gara 1000curve. Perfetta per piloti che vogliono tracciare i loro tempi e progressi in gara!
 
-- **Login e selezione gara**: L'utente può selezionare la gara e il proprio profilo pilota.
-- **Ricerca tappa**: Inserisci il codice della tappa per visualizzare i dettagli e la posizione.
-- **Geolocalizzazione**: L'app verifica la distanza dalla tappa e abilita il pulsante "START" solo se sei vicino.
-- **Countdown**: Premendo "START" parte un countdown di 10 secondi. Al termine viene inviata la registrazione del tempo tramite chiamata API.
-- **Cookie completati**: Pulsante sempre visibile che mostra la tabella delle tappe completate (cookie) direttamente in app.
-- **Visualizzazione tabella**: La tabella dei cookie è leggibile e responsive, ottimizzata per mobile.
+## 📱 Funzionalità Principali
 
-## Struttura del progetto
+- 🔐 **Login e selezione gara**: Scegli la tua gara e profilo pilota
+- 🔍 **Ricerca tappa**: Inserisci il codice per vedere dettagli e posizione
+- 📍 **Geolocalizzazione**: Verifica automatica della vicinanza alla tappa
+- ⏱️ **Countdown**: 10 secondi di preparazione prima della registrazione
+- 🍪 **Cookie completati**: Visualizza le tappe finite direttamente in app
+- 📊 **Tabella responsive**: Ottimizzata per dispositivi mobili
+- 📱 **Sidebar Off-Run**: Navigazione moderna con animazioni, feedback aptico e menu: Gare, Cookie, Lista, Run, Classifiche (soon), Profilo (soon)
 
-- `app/race.tsx`: Schermata principale della gara e gestione tappe/cookie.
-- `components/`: Componenti UI riutilizzabili.
-- `hooks/`: Hook personalizzati (es. geolocalizzazione).
-- `utils/`: Utility varie (es. calcolo distanza GPS).
-- `assets/`: Immagini e font.
+## 📂 Struttura del Codice
 
-## API principali
+```
+1000curve/
+├── app/
+│   ├── _layout.tsx
+│   ├── index.tsx
+│   ├── login.tsx
+│   ├── off-run.tsx       # Pagina off-run con sidebar
+│   ├── race.tsx          # Schermata principale gara
+│   ├── (tabs)/
+│   │   ├── _layout.tsx
+│   │   ├── explore.tsx
+│   │   └── index.tsx
+│   └── StartScreen.tsx
+├── components/
+│   ├── Sidebar.tsx       # Sidebar animata con haptics
+│   ├── AnimatedWave.tsx
+│   ├── Collapsible.tsx
+│   ├── ExternalLink.tsx
+│   ├── HapticTab.tsx
+│   ├── HelloWave.tsx
+│   ├── ParallaxScrollView.tsx
+│   ├── RaceHeader.tsx
+│   ├── ThemedText.tsx
+│   ├── ThemedView.tsx
+│   ├── YellowGradientBackground.tsx
+│   └── ui/
+│       ├── IconSymbol.ios.tsx
+│       ├── IconSymbol.tsx
+│       ├── TabBarBackground.ios.tsx
+│       └── TabBarBackground.tsx
+├── constants/
+│   └── Colors.ts
+├── hooks/
+│   ├── useColorScheme.ts
+│   ├── useColorScheme.web.ts
+│   └── useLiveLocation.ts
+│   └── useThemeColor.ts
+├── utils/
+│   ├── auth.ts
+│   └── geo.ts
+├── assets/
+│   ├── fonts/
+│   └── images/
+├── android/
+├── ios/
+├── scripts/
+├── constants/
+└── package.json, etc.
+```
 
-- `GET /CRMRaceLog?action=set&setAction=setRacerLocationTime&...`  
-  Registra il tempo di completamento tappa.
-- `GET /Racer?action=get&getAction=raceLocationDone&...`  
-  Verifica se la tappa è già stata completata.
-- `GET /Racer?action=get&getAction=getRacerLocationTimesHtml&...`  
-  Restituisce la tabella HTML dei cookie completati.
+## 🔌 API Principali
 
-## Avvio progetto
+- `GET /CRMRaceLog` - Registra tempo tappa
+- `GET /Racer?action=get&getAction=raceLocationDone` - Verifica completamento
+- `GET /Racer?action=get&getAction=getRacerLocationTimesHtml` - Tabella cookie HTML
 
-1. Installa le dipendenze:
-   ```sh
+## 🚀 Come Iniziare
+
+1. **Installa dipendenze**:
+   ```bash
    npm install
    ```
-2. Avvia l'app in modalità sviluppo:
-   ```sh
+
+2. **Avvia in sviluppo**:
+   ```bash
    npx expo start
    ```
 
-## Note
+## 💡 Note
 
-
-- Le chiamate API richiedono header e cookie specifici per funzionare correttamente.
+- API richiedono header e cookie specifici
+- Ottimizzata per iOS e Android
 
 ---
+
+*Creato con ❤️ per la comunità 1000curve*
