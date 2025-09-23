@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const STORAGE_KEYS = {
   RACER_DATA: 'racerData',
   RACE_DATA: 'raceData',
+  OFF_RUN_USER_DATA: 'offRunUserData',
 };
 
 const API_CONFIG = {
@@ -18,10 +19,22 @@ export interface RacerData {
   email: string;
 }
 
+export interface OffRunUserData {
+  email: string;
+  username: string;
+  firstname: string;
+  lastname: string;
+}
+
 export interface AuthState {
   isAuthenticated: boolean;
   racerData: RacerData | null;
   raceData: any | null;
+}
+
+export interface OffRunAuthState {
+  isAuthenticated: boolean;
+  userData: OffRunUserData | null;
 }
 
 /**
@@ -180,12 +193,83 @@ export const checkAuthStatus = async (): Promise<AuthState> => {
 };
 
 /**
+ * Salva i dati di autenticazione Off-Run nell'AsyncStorage
+ */
+export const saveOffRunAuthData = async (userData: OffRunUserData): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.OFF_RUN_USER_DATA, JSON.stringify(userData));
+    console.log('Dati di autenticazione Off-Run salvati');
+  } catch (error) {
+    console.error('Errore nel salvataggio dati di autenticazione Off-Run:', error);
+    throw error;
+  }
+};
+
+/**
+ * Rimuove i dati di autenticazione Off-Run dall'AsyncStorage
+ */
+export const clearOffRunAuthData = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEYS.OFF_RUN_USER_DATA);
+    console.log('Dati di autenticazione Off-Run rimossi');
+  } catch (error) {
+    console.error('Errore nella rimozione dati di autenticazione Off-Run:', error);
+    throw error;
+  }
+};
+
+/**
+ * Recupera i dati di autenticazione Off-Run dall'AsyncStorage
+ */
+export const getOffRunAuthData = async (): Promise<OffRunAuthState> => {
+  try {
+    const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.OFF_RUN_USER_DATA);
+
+    if (!userDataString) {
+      return {
+        isAuthenticated: false,
+        userData: null,
+      };
+    }
+
+    const userData: OffRunUserData = JSON.parse(userDataString);
+
+    // Verifica che i dati essenziali siano presenti
+    if (!userData.email || !userData.username) {
+      return {
+        isAuthenticated: false,
+        userData: null,
+      };
+    }
+
+    return {
+      isAuthenticated: true,
+      userData,
+    };
+  } catch (error) {
+    console.error('Errore nel recupero dati di autenticazione Off-Run:', error);
+    return {
+      isAuthenticated: false,
+      userData: null,
+    };
+  }
+};
+
+/**
+ * Verifica se l'utente Off-Run è autenticato
+ */
+export const checkOffRunAuthStatus = async (): Promise<OffRunAuthState> => {
+  const authData = await getOffRunAuthData();
+  return authData;
+};
+
+/**
  * Funzione di debug per controllare lo stato attuale dell'autenticazione
  */
 export const debugAuthStatus = async (): Promise<void> => {
   try {
     const authData = await getAuthData();
-    console.log('=== AUTH DEBUG ===');
+    console.log('=== RUN AUTH DEBUG ===');
     console.log('Is Authenticated:', authData.isAuthenticated);
     console.log('Racer Data:', authData.racerData);
     console.log('Race Data:', authData.raceData ? 'Present' : 'Not found');
@@ -194,7 +278,13 @@ export const debugAuthStatus = async (): Promise<void> => {
       const isValid = await isRaceValid(authData.racerData.raceslug);
       console.log('Race Valid:', isValid);
     }
-    console.log('==================');
+    console.log('======================');
+
+    const offRunAuthData = await getOffRunAuthData();
+    console.log('=== OFF-RUN AUTH DEBUG ===');
+    console.log('Is Authenticated:', offRunAuthData.isAuthenticated);
+    console.log('User Data:', offRunAuthData.userData);
+    console.log('==========================');
   } catch (error) {
     console.error('Debug Auth Error:', error);
   }

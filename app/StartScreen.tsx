@@ -1,4 +1,4 @@
-import { checkAuthStatus } from '@/utils/auth';
+import { checkAuthStatus, checkOffRunAuthStatus } from '@/utils/auth';
 import { FontAwesome } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
@@ -52,7 +52,19 @@ export default function StartScreen() {
           });
           return;
         } else {
-          console.log('Utente non autenticato, mostra schermata di avvio');
+          console.log('Utente Run non autenticato, controllo Off-Run...');
+          
+          // Controlla autenticazione Off-Run
+          const offRunAuthStatus = await checkOffRunAuthStatus();
+          if (offRunAuthStatus?.isAuthenticated && offRunAuthStatus?.userData) {
+            console.log('Utente Off-Run già autenticato, reindirizzamento...');
+            
+            // Naviga direttamente alla pagina off-run
+            router.replace('/off-run');
+            return;
+          } else {
+            console.log('Nessun utente autenticato, mostra schermata di avvio');
+          }
         }
       } catch (error) {
         console.error('Errore nel controllo autenticazione:', error);
