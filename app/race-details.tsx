@@ -234,13 +234,31 @@ export default function RaceDetailsScreen() {
       />
 
       <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
-        {/* Pulsante indietro */}
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Icon name="arrow-left" size={16} color="#022C43" />
-          <ThemedText style={styles.backButtonText} allowFontScaling={false}>
-            Torna alla lista
-          </ThemedText>
-        </TouchableOpacity>
+        {/* Pulsanti header */}
+        <View style={styles.headerButtons}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Icon name="arrow-left" size={16} color="#022C43" />
+            <ThemedText style={styles.backButtonText} allowFontScaling={false}>
+              Torna alla lista
+            </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.startButton} onPress={() => {
+            router.push({
+              pathname: '/start-race',
+              params: {
+                raceSlug: raceDetails.slug,
+                raceName: raceDetails.name,
+                startLocation: JSON.stringify(raceDetails.offRunStartAddress)
+              }
+            });
+          }}>
+            <ThemedText style={styles.startButtonText} allowFontScaling={false}>
+              Inizia la gara
+            </ThemedText>
+            <Icon name="play" size={16} color="#022C43" />
+          </TouchableOpacity>
+        </View>
 
         {/* Header della gara */}
         <View style={styles.raceHeader}>
@@ -609,12 +627,10 @@ const styles = StyleSheet.create({
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     backgroundColor: '#FFD700',
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -626,6 +642,31 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#022C43',
     marginLeft: 6,
+  },
+  startButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFD700',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  startButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#022C43',
+    marginRight: 6,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   emptySection: {
     backgroundColor: '#ffffff',
