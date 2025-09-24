@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import { Animated, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from './ThemedText';
@@ -12,6 +13,7 @@ interface SidebarProps {
 export default function Sidebar({ isVisible, onClose }: SidebarProps) {
   const slideAnim = useRef(new Animated.Value(-250)).current; // Inizia fuori schermo
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const router = useRouter();
 
   useEffect(() => {
     if (isVisible) {
@@ -71,7 +73,7 @@ export default function Sidebar({ isVisible, onClose }: SidebarProps) {
             <ThemedText style={styles.menuText}>Cookie preferiti</ThemedText>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); console.log('Lista delle gare pressed'); }}>
+          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onClose(); router.push('/races'); }}>
             <Ionicons name="list-outline" size={20} color="#000" style={styles.menuIcon} />
             <ThemedText style={styles.menuText}>Lista delle Run</ThemedText>
           </TouchableOpacity>
