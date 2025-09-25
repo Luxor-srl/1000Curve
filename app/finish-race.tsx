@@ -4,6 +4,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { useLiveLocation } from '@/hooks/useLiveLocation';
 import { clearOffRunAuthData, getOffRunAuthData } from '@/utils/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import * as Haptics from 'expo-haptics';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -30,6 +32,10 @@ export default function FinishRaceScreen() {
   const { location, errorMsg: locationError } = useLiveLocation();
 
   console.log('FinishRace params:', { raceSlug, raceName, finishLocation });
+
+  const triggerHaptic = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+  };
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -122,12 +128,79 @@ export default function FinishRaceScreen() {
     try {
       setIsFinishing(true);
 
+      const authData = await getOffRunAuthData();
+      if (!authData.isAuthenticated || !authData.userData) {
+        Alert.alert('Errore', 'Dati utente non disponibili');
+        return;
+      }
+
+      // Fetch race data to get FINISH location
+      const headers = {
+        'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+      };
+      const paramsRace = new URLSearchParams({
+        action: 'get',
+        getAction: 'getRace',
+        slug: raceSlug,
+      });
+      const urlRace = `https://crm.1000curve.com/Race?${paramsRace.toString()}`;
+      const responseRace = await fetch(urlRace, { method: 'GET', headers });
+      const textRace = await responseRace.text();
+      // Log curl per Postman
+      const curlCommandRace = `curl -X GET "${urlRace}" -H "Api-Key: uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW"`;
+      console.log('CURL per Postman (dati gara per FINISH):', curlCommandRace);
+      let raceData = null;
+      try {
+        raceData = textRace ? JSON.parse(textRace) : null;
+      } catch (e) {
+        console.error('Errore parsing JSON /Race:', e, textRace);
+      }
+      const finishLocationFromRace = raceData?.raceLocations?.find((loc: any) => loc.name?.toUpperCase().includes('FINISH') || loc.code?.toUpperCase().includes('FINISH'));
+
       // Aggiorna la sessione con la data di fine
       const sessionString = await AsyncStorage.getItem('raceSession');
       if (sessionString) {
         const session = JSON.parse(sessionString);
         session.finishDate = new Date().toISOString();
         await AsyncStorage.setItem('raceSession', JSON.stringify(session));
+
+        // Registra il cookie FINISH
+        if (finishLocationFromRace) {
+          const timestamp = Math.floor(Date.now() / 1000);
+          const netState = await NetInfo.fetch();
+          if (netState.isConnected) {
+            const paramsSet = new URLSearchParams({
+              action: 'set',
+              setAction: 'setRacerLocationTime',
+              racerId: session.id,
+              racerClientId: session.clientId,
+              raceLocationCode: finishLocationFromRace.code,
+              timestamp: String(timestamp),
+            });
+            const urlSet = `https://crm.1000curve.com/CRMRaceLog?${paramsSet.toString()}`;
+            const headersSet = {
+              'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+              'Accept': '*/*',
+              'Accept-Language': 'it',
+              'Referer': 'https://crm.1000curve.com/app/race.html',
+              'X-Requested-With': 'XMLHttpRequest',
+              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+            };
+            try {
+              const responseSet = await fetch(urlSet, { method: 'GET', headers: headersSet, credentials: 'include' });
+              const textSet = await responseSet.text();
+              console.log('Risposta registrazione FINISH:', textSet);
+              // Log curl per Postman
+              const curlCommand = `curl -X GET "${urlSet}" -H "Api-Key: uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW" -H "Accept: */*" -H "Accept-Language: it" -H "Referer: https://crm.1000curve.com/app/race.html" -H "X-Requested-With: XMLHttpRequest" -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36" --include`;
+              console.log('CURL per Postman (registrazione FINISH):', curlCommand);
+            } catch (error) {
+              console.error('Errore registrazione FINISH:', error);
+              // Non bloccare, continua
+            }
+          } else {
+            // Offline, non registrare per ora
+          }
+        }
 
         // Aggiungi alla lista delle gare completate
         const completedString = await AsyncStorage.getItem('completedRaces');
@@ -161,11 +234,12 @@ export default function FinishRaceScreen() {
   if (!userInfo) {
     return (
       <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-        <Stack.Screen options={{ headerShown: false }} />
+        <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
         <RaceHeader
           pilotName={userInfo?.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
           onSidebarPress={handleSidebarOpen}
           onLogoutPress={handleLogout}
+          showSidebarButton={false}
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FFD700" />
@@ -181,11 +255,12 @@ export default function FinishRaceScreen() {
   if (!finishLocation) {
     return (
       <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-        <Stack.Screen options={{ headerShown: false }} />
+        <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
         <RaceHeader
           pilotName={userInfo.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
           onSidebarPress={handleSidebarOpen}
           onLogoutPress={handleLogout}
+          showSidebarButton={false}
         />
         <View style={styles.errorContainer}>
           <Icon name="exclamation-triangle" size={48} color="#ccc" />
@@ -200,16 +275,17 @@ export default function FinishRaceScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      <Stack.Screen options={{ headerShown: false }} />
+      <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
       <RaceHeader
         pilotName={userInfo.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
         onSidebarPress={handleSidebarOpen}
         onLogoutPress={handleLogout}
+        showSidebarButton={false}
       />
 
       <View style={styles.contentContainer}>
         {/* Pulsante indietro */}
-        <TouchableOpacity style={[styles.backButton, { position: 'absolute', top: 20, left: 20 }]} onPress={() => router.back()}>
+        <TouchableOpacity style={[styles.backButton, { position: 'absolute', top: 20, left: 20 }]} onPress={() => { triggerHaptic(); router.back(); }}>
           <Icon name="arrow-left" size={16} color="#022C43" />
           <ThemedText style={styles.backButtonText} allowFontScaling={false}>
             Gara Off-Run
@@ -222,7 +298,7 @@ export default function FinishRaceScreen() {
           <View style={styles.instructionCard}>
             <Icon name="flag-checkered" size={48} color="#FFD700" />
             <ThemedText style={styles.instructionTitle} allowFontScaling={false}>
-              Recati al punto di arrivo (FINISH) per completare la gara
+              Recati al punto di arrivo (FINISH) per concludere la gara
             </ThemedText>
 
             {location && (
@@ -250,7 +326,7 @@ export default function FinishRaceScreen() {
           </View>
 
           {/* Pulsante Vai a Mappe */}
-          <TouchableOpacity style={styles.mapsButton} onPress={handleOpenMaps}>
+          <TouchableOpacity style={styles.mapsButton} onPress={() => { triggerHaptic(); handleOpenMaps(); }}>
             <Icon name="map" size={20} color="#022C43" />
             <ThemedText style={styles.mapsButtonText} allowFontScaling={false}>
               Vai a Mappe
@@ -260,7 +336,7 @@ export default function FinishRaceScreen() {
           {/* Pulsante FINISH sempre visibile */}
           <TouchableOpacity
             style={[styles.finishRaceButton, !canFinish && styles.finishRaceButtonDisabled]}
-            onPress={handleFinishRace}
+            onPress={() => { triggerHaptic(); handleFinishRace(); }}
             disabled={!canFinish || isFinishing}
           >
             {isFinishing ? (

@@ -6,17 +6,20 @@ interface RaceHeaderProps {
   pilotName: string;
   onSidebarPress: () => void;
   onLogoutPress: () => void;
+  showSidebarButton?: boolean;
 }
 
-const RaceHeader: React.FC<RaceHeaderProps> = ({ pilotName, onSidebarPress, onLogoutPress }) => {
+const RaceHeader: React.FC<RaceHeaderProps> = ({ pilotName, onSidebarPress, onLogoutPress, showSidebarButton = true }) => {
   const { height: screenHeight } = Dimensions.get('window');
   const isSmallScreen = screenHeight < 700; // Consideriamo piccoli gli schermi sotto i 700px
 
   return (
     <View style={[styles.headerContainer, isSmallScreen && styles.headerContainerSmall]}>
-      <TouchableOpacity onPress={onSidebarPress} style={styles.sidebarIcon}>
-        <Ionicons name="menu" size={isSmallScreen ? 26 : 30} color="black" />
-      </TouchableOpacity>
+      {showSidebarButton && (
+        <TouchableOpacity onPress={onSidebarPress} style={styles.sidebarIcon}>
+          <Ionicons name="menu" size={isSmallScreen ? 26 : 30} color="black" />
+        </TouchableOpacity>
+      )}
       <Image
         source={require('@/assets/images/logo-mille-dark.png')}
         style={[styles.logo, isSmallScreen && styles.logoSmall]}

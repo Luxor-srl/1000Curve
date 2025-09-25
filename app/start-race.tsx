@@ -251,7 +251,7 @@ export default function StartRaceScreen() {
   if (!userInfo) {
     return (
       <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-        <Stack.Screen options={{ headerShown: false }} />
+        <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
         <RaceHeader
           pilotName={userInfo?.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
           onSidebarPress={handleSidebarOpen}
@@ -271,7 +271,7 @@ export default function StartRaceScreen() {
   if (!startLocation) {
     return (
       <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-        <Stack.Screen options={{ headerShown: false }} />
+        <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
         <RaceHeader
           pilotName={userInfo.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
           onSidebarPress={handleSidebarOpen}
@@ -290,7 +290,7 @@ export default function StartRaceScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      <Stack.Screen options={{ headerShown: false }} />
+      <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
       <RaceHeader
         pilotName={userInfo.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
         onSidebarPress={handleSidebarOpen}

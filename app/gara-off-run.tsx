@@ -5,6 +5,7 @@ import { clearOffRunAuthData, getOffRunAuthData } from '@/utils/auth';
 import { getDistanceFromLatLonInMeters } from '@/utils/geo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import * as Haptics from 'expo-haptics';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, AppState, Dimensions, Keyboard, Linking, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
@@ -106,7 +107,11 @@ export default function GaraOffRunScreen() {
   const [cookieCheckMessage, setCookieCheckMessage] = useState<string | null>(null);
 
   // Timer states
-  const [raceTimer, setRaceTimer] = useState<string>('');
+  const [raceTimer, setRaceTimer] = useState<string>('Caricamento timer...');
+
+  const triggerHaptic = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+  };
   const [raceInfo, setRaceInfo] = useState<any>(null);
 
   // Drawer state and animation
@@ -185,14 +190,24 @@ export default function GaraOffRunScreen() {
 
   // Timer effect per countdown fino alla fine della gara Off-Run
   useEffect(() => {
-    if (!parsed || !parsed.offRunDurationLimit) return;
+    if (!parsed) {
+      setRaceTimer('Dati gara non caricati');
+      return;
+    }
+    if (!parsed.offRunDurationLimitHours) {
+      setRaceTimer('Durata non disponibile');
+      return;
+    }
 
     const loadSessionAndUpdateTimer = async () => {
       const sessionString = await AsyncStorage.getItem('raceSession');
-      if (!sessionString) return;
+      if (!sessionString) {
+        setRaceTimer('Sessione non trovata');
+        return;
+      }
       const session = JSON.parse(sessionString);
       const startTime = new Date(session.startDate).getTime();
-      const durationLimit = parsed.offRunDurationLimit; // in ore
+      const durationLimit = parsed.offRunDurationLimitHours; // in ore
       const finishTime = startTime + (durationLimit * 60 * 60 * 1000);
 
       const updateTimer = () => {
@@ -448,7 +463,8 @@ export default function GaraOffRunScreen() {
 
   // Se tutti i cookie sono fatti, naviga a finish-race
   useEffect(() => {
-    if (allCookiesDone) {
+    const allDone = cookiesList.length > 0 && cookiesList.every(cookie => cookie.done);
+    if (allDone && !isDrawerOpen) {
       // Trova il punto FINISH
       const finishLocation = parsed.raceLocations?.find((loc: any) => loc.name?.toUpperCase().includes('FINISH') || loc.code?.toUpperCase().includes('FINISH'));
       if (finishLocation) {
@@ -465,7 +481,7 @@ export default function GaraOffRunScreen() {
         });
       }
     }
-  }, [allCookiesDone, parsed, racer]);
+  }, [cookiesList, parsed, racer]);
 
   if (!parsed || !racer) {
     return (
@@ -579,8 +595,8 @@ export default function GaraOffRunScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <RaceHeader pilotName={racer.racerfullname} onSidebarPress={handleSidebarOpen} onLogoutPress={handleLogout} />
+      <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
+      <RaceHeader pilotName={racer.racerfullname} onSidebarPress={handleSidebarOpen} onLogoutPress={handleLogout} showSidebarButton={false} />
 
       {/* Welcome Box with Cookie Logic */}
       <View style={[styles.welcomeBox, isSmallScreen && styles.welcomeBoxSmall]}>
@@ -588,11 +604,39 @@ export default function GaraOffRunScreen() {
             {/* Race Name and Timer Row */}
             <View style={styles.raceNameRow}>
               <ThemedText style={[styles.welcomeRace, isSmallScreen && styles.welcomeRaceSmall]} allowFontScaling={false}>{parsed.name}</ThemedText>
-              {raceTimer && (
+              <View style={styles.timerAndButtonRow}>
                 <View style={[styles.timerContainer, isSmallScreen && styles.timerContainerSmall]}>
                   <ThemedText style={[styles.timerText, isSmallScreen && styles.timerTextSmall]} allowFontScaling={false}>{raceTimer}</ThemedText>
                 </View>
-              )}
+                <TouchableOpacity
+                  style={[styles.endRaceButton, isSmallScreen && styles.endRaceButtonSmall]}
+                  onPress={() => {
+                    triggerHaptic();
+                    // Trova il punto FINISH
+                    const finishLocation = parsed.raceLocations?.find((loc: any) => loc.name?.toUpperCase().includes('FINISH') || loc.code?.toUpperCase().includes('FINISH'));
+                    if (finishLocation) {
+                      router.push({
+                        pathname: '/finish-race' as any,
+                        params: {
+                          raceSlug: racer.raceslug,
+                          raceName: parsed.name,
+                          finishLocation: JSON.stringify({
+                            latitude: finishLocation.latitude || finishLocation.address?.latitude,
+                            longitude: finishLocation.longitude || finishLocation.address?.longitude,
+                          }),
+                        },
+                      });
+                    } else {
+                      Alert.alert('Errore', 'Punto di arrivo non trovato.');
+                    }
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <ThemedText style={[styles.endRaceButtonText, isSmallScreen && styles.endRaceButtonTextSmall]} allowFontScaling={false}>
+                    Termina
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <ThemedText style={[styles.welcomeInstruction, isSmallScreen && styles.welcomeInstructionSmall]} allowFontScaling={false}>Inserisci il numero del cookie qui sotto</ThemedText>
@@ -617,6 +661,7 @@ export default function GaraOffRunScreen() {
                   style={[styles.searchButton, isSmallScreen && styles.searchButtonSmall]}
                   disabled={searchingStage}
                   onPress={async () => {
+                    triggerHaptic();
                     console.log('[DEBUG] Pulsante ricerca cookie premuto', { stageCode });
                     Keyboard.dismiss(); // Nasconde la tastiera
                     setStageDone(null); // reset stato
@@ -768,6 +813,7 @@ export default function GaraOffRunScreen() {
                         { backgroundColor: stageDone ? '#28a745' : '#FFD700' }
                       ]}
                       onPress={async () => {
+                        triggerHaptic();
                         // Verifica ancora una volta il cookie prima di iniziare il countdown
                         setSearchingStage(true);
                         setCookieCheckMessage('Verifica finale cookie...');
@@ -828,6 +874,7 @@ export default function GaraOffRunScreen() {
                     <TouchableOpacity
                       style={styles.mapsButton}
                       onPress={() => {
+                        triggerHaptic();
                         const url = `https://www.google.com/maps/search/?api=1&query=${foundStage.latitude},${foundStage.longitude}`;
                         Linking.openURL(url);
                       }}
@@ -865,7 +912,10 @@ export default function GaraOffRunScreen() {
         <View style={[styles.drawerContent, isSmallScreen && styles.drawerContentSmall]}>
           <TouchableOpacity
             style={[styles.roadBookButton, isSmallScreen && styles.roadBookButtonSmall]}
-            onPress={toggleDrawer}
+            onPress={() => {
+              triggerHaptic();
+              toggleDrawer();
+            }}
             activeOpacity={0.8}
           >
             <ThemedText style={styles.roadBookText} allowFontScaling={false}>
@@ -898,6 +948,7 @@ export default function GaraOffRunScreen() {
                         { backgroundColor: cookie.done ? '#28a745' : '#FFD700' }
                       ]}
                       onPress={() => {
+                        triggerHaptic();
                         setStageCode(cookie.code);
                         toggleDrawer();
                       }}
@@ -1015,19 +1066,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 8,
   },
+  timerAndButtonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   timerContainer: {
     backgroundColor: '#FFD700',
     borderRadius: 15,
     paddingVertical: 6,
     paddingHorizontal: 12,
-    marginLeft: 12,
+    marginRight: 8,
     flexShrink: 0,
   },
   timerContainerSmall: {
     borderRadius: 12,
     paddingVertical: 4,
     paddingHorizontal: 8,
-    marginLeft: 8,
+    marginRight: 6,
   },
   timerText: {
     fontSize: 14,
@@ -1036,6 +1091,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   timerTextSmall: {
+    fontSize: 12,
+  },
+  endRaceButton: {
+    backgroundColor: '#FF4444',
+    borderRadius: 15,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    flexShrink: 0,
+  },
+  endRaceButtonSmall: {
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  endRaceButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  endRaceButtonTextSmall: {
     fontSize: 12,
   },
   welcomeGreeting: {

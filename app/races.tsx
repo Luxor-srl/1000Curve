@@ -2,6 +2,7 @@ import RaceHeader from '@/components/RaceHeader';
 import Sidebar from '@/components/Sidebar';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import YellowGradientBackground from '@/components/YellowGradientBackground';
 import { clearOffRunAuthData, getOffRunAuthData } from '@/utils/auth';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -183,6 +184,7 @@ export default function RacesScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
       <Stack.Screen options={{ headerShown: false }} />
+      <YellowGradientBackground />
       <RaceHeader
         pilotName={userInfo.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
         onSidebarPress={handleSidebarOpen}
@@ -286,6 +288,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#FFD700',
   },
   raceItemContent: {
     padding: 16,

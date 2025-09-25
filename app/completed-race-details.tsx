@@ -1,9 +1,9 @@
 import RaceHeader from '@/components/RaceHeader';
 import Sidebar from '@/components/Sidebar';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import YellowGradientBackground from '@/components/YellowGradientBackground';
 import { clearOffRunAuthData, getOffRunAuthData } from '@/utils/auth';
+import * as Haptics from 'expo-haptics';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -47,20 +47,49 @@ interface RaceDetails {
   raceLocationCombos: RaceLocationCombo[];
 }
 
-export default function RaceDetailsScreen() {
+interface RacerLocationTime {
+  code: string;
+  name: string;
+  description: string;
+  address: {
+    latitude: number;
+    longitude: number;
+    address1: string;
+    postcode: string;
+    cityTownVillage: string;
+    municipality?: string;
+    country: string;
+    zone?: string;
+  };
+  done: boolean;
+  points: number;
+  arrivalDate?: string;
+  arrivalDateDisplayTimestamp?: string;
+  arrivalDateTimestamp?: number;
+  arrivalDateGmtDate?: string;
+  arrivalDateGmtInternetDate?: string;
+}
+
+export default function CompletedRaceDetailsScreen() {
   const params = useLocalSearchParams();
   const raceSlug = params.raceSlug as string;
+  const racerId = params.racerId as string;
+  const clientId = params.clientId as string;
   const router = useRouter();
   const [userInfo, setUserInfo] = useState<any>(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [raceDetails, setRaceDetails] = useState<RaceDetails | null>(null);
+  const [racerLocationTimes, setRacerLocationTimes] = useState<RacerLocationTime[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const triggerHaptic = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+  };
+
   useEffect(() => {
-    // Verifica se abbiamo il parametro raceSlug
-    if (!raceSlug) {
-      console.error('Parametro raceSlug mancante, reindirizzamento...');
-      router.replace('/races');
+    if (!raceSlug || !racerId || !clientId) {
+      console.error('Parametri mancanti, reindirizzamento...');
+      router.replace('/my-races');
       return;
     }
 
@@ -69,65 +98,99 @@ export default function RaceDetailsScreen() {
         const authData = await getOffRunAuthData();
         if (authData.isAuthenticated && authData.userData) {
           setUserInfo(authData.userData);
-          // Carica i dettagli della gara dopo aver verificato l'autenticazione
-          await loadRaceDetails();
+          // Carica dettagli gara e tempi in parallelo
+          await Promise.all([loadRaceDetails(), loadRacerLocationTimes()]);
         } else {
-          // Se non ci sono dati utente, torna al login
           router.replace('/');
         }
       } catch (error) {
         console.error('Errore nel caricamento dati utente:', error);
         router.replace('/');
+      } finally {
+        setLoading(false);
       }
     };
     loadUserData();
-  }, [raceSlug, router]);
+  }, [raceSlug, racerId, clientId, router]);
 
   const loadRaceDetails = async () => {
     if (!raceSlug) return;
 
     try {
-      setLoading(true);
       const headers = {
         'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
       };
       const params = new URLSearchParams({
         action: 'get',
         getAction: 'getRace',
-        slug: raceSlug as string,
+        slug: raceSlug,
       });
       const url = `https://crm.1000curve.com/Race?${params.toString()}`;
 
       console.log('Caricamento dettagli gara:', url);
       const response = await fetch(url, { method: 'GET', headers });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
 
       if (data && typeof data === 'object') {
-        // Verifica che abbiamo almeno le proprietà essenziali
         if (data.name && data.slug) {
           setRaceDetails(data);
           console.log('Dettagli gara caricati:', data.name);
         } else {
           console.warn('Risposta API incompleta:', data);
-          Alert.alert('Errore', 'I dati della gara ricevuti sono incompleti. Riprova più tardi.');
+          Alert.alert('Errore', 'I dati della gara ricevuti sono incompleti.');
           router.back();
         }
       } else {
         console.warn('Risposta API non valida:', data);
-        Alert.alert('Errore', 'Impossibile caricare i dettagli della gara. Riprova più tardi.');
+        Alert.alert('Errore', 'Impossibile caricare i dettagli della gara.');
         router.back();
       }
     } catch (error) {
       console.error('Errore nel caricamento dettagli gara:', error);
       Alert.alert('Errore', 'Impossibile caricare i dettagli della gara');
       router.back();
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const loadRacerLocationTimes = async () => {
+    if (!racerId || !clientId) return;
+
+    try {
+      const headers = {
+        'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+      };
+      const params = new URLSearchParams({
+        action: 'get',
+        getAction: 'getRacerLocationTimes',
+        format: 'json',
+        id: racerId,
+        clientId: clientId,
+      });
+      const url = `https://crm.1000curve.com/Racer?${params.toString()}`;
+
+      console.log('Caricamento tempi racer:', url);
+      const response = await fetch(url, { method: 'GET', headers });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data && data.raceLocationTimes) {
+        setRacerLocationTimes(data.raceLocationTimes);
+        console.log('Tempi racer caricati');
+      } else {
+        console.warn('Risposta API tempi racer non valida:', data);
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento tempi racer:', error);
+      Alert.alert('Errore', 'Impossibile caricare i tempi della gara');
     }
   };
 
@@ -177,20 +240,17 @@ export default function RaceDetailsScreen() {
     }
   };
 
-  if (!userInfo) {
-    return (
-      <ThemedView style={styles.container}>
-        <ThemedText allowFontScaling={false}>Caricamento...</ThemedText>
-      </ThemedView>
-    );
-  }
+  const getLocationTime = (code: string) => {
+    return racerLocationTimes.find(loc => loc.code === code);
+  };
 
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
         <Stack.Screen options={{ headerShown: false }} />
+        <YellowGradientBackground />
         <RaceHeader
-          pilotName={userInfo.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
+          pilotName={userInfo?.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
           onSidebarPress={handleSidebarOpen}
           onLogoutPress={handleLogout}
         />
@@ -209,6 +269,7 @@ export default function RaceDetailsScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
         <Stack.Screen options={{ headerShown: false }} />
+        <YellowGradientBackground />
         <RaceHeader
           pilotName={userInfo.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
           onSidebarPress={handleSidebarOpen}
@@ -238,27 +299,11 @@ export default function RaceDetailsScreen() {
       <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
         {/* Pulsanti header */}
         <View style={styles.headerButtons}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backButton} onPress={() => { triggerHaptic(); router.back(); }}>
             <Icon name="arrow-left" size={16} color="#022C43" />
             <ThemedText style={styles.backButtonText} allowFontScaling={false}>
-              Torna alla lista
+              Torna alle mie gare
             </ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.startButton} onPress={() => {
-            router.push({
-              pathname: '/start-race',
-              params: {
-                raceSlug: raceDetails.slug,
-                raceName: raceDetails.name,
-                startLocation: JSON.stringify(raceDetails.offRunStartAddress)
-              }
-            });
-          }}>
-            <ThemedText style={styles.startButtonText} allowFontScaling={false}>
-              Inizia la gara
-            </ThemedText>
-            <Icon name="play" size={16} color="#022C43" />
           </TouchableOpacity>
         </View>
 
@@ -266,6 +311,9 @@ export default function RaceDetailsScreen() {
         <View style={styles.raceHeader}>
           <ThemedText style={styles.raceName} allowFontScaling={false}>
             {raceDetails.name || 'Gara senza nome'}
+          </ThemedText>
+          <ThemedText style={styles.completedText} allowFontScaling={false}>
+            Gara Completata
           </ThemedText>
         </View>
 
@@ -303,7 +351,7 @@ export default function RaceDetailsScreen() {
         {/* Roadbook */}
         {raceDetails.roadbookUrl && (
           <View style={styles.section}>
-            <TouchableOpacity style={styles.roadbookButton} onPress={openRoadbook}>
+            <TouchableOpacity style={styles.roadbookButton} onPress={() => { triggerHaptic(); openRoadbook(); }}>
               <Icon name="file-pdf-o" size={20} color="#022C43" />
               <ThemedText style={styles.roadbookText} allowFontScaling={false}>
                 Visualizza Roadbook
@@ -321,15 +369,16 @@ export default function RaceDetailsScreen() {
             {raceDetails.raceLocations?.some(loc => loc.address?.latitude && loc.address?.longitude) && (
               <TouchableOpacity
                 style={styles.mapToggleButton}
-                onPress={() => router.push({
+                onPress={() => { triggerHaptic(); router.push({
                   pathname: '/race-map',
                   params: {
                     raceSlug: raceDetails.slug,
                     raceName: raceDetails.name,
                     pointsName: raceDetails.pointsName,
-                    raceLocations: JSON.stringify(raceDetails.raceLocations)
+                    raceLocations: JSON.stringify(raceDetails.raceLocations),
+                    racerLocationTimes: JSON.stringify(racerLocationTimes),
                   }
-                })}
+                }); }}
               >
                 <Icon name="map" size={16} color="#022C43" />
                 <ThemedText style={styles.mapToggleText} allowFontScaling={false}>
@@ -339,38 +388,57 @@ export default function RaceDetailsScreen() {
             )}
           </View>
 
-          {raceDetails.raceLocations?.filter(loc => loc.code !== 'START' && loc.code !== 'FINISH').map((location) => (
-            <View key={location.code} style={styles.locationCard}>
-              <View style={styles.locationHeader}>
-                <View style={styles.locationCode}>
-                  <ThemedText style={styles.locationCodeText} allowFontScaling={false}>
-                    {location.code}
-                  </ThemedText>
+          {raceDetails.raceLocations?.filter(loc => loc.code !== 'START' && loc.code !== 'FINISH').map((location) => {
+            const racerTime = getLocationTime(location.code);
+            return (
+              <View key={location.code} style={styles.locationCard}>
+                <View style={styles.locationHeader}>
+                  <View style={[styles.locationCode, racerTime?.done ? styles.locationCodeDone : {}]}>
+                    <ThemedText style={styles.locationCodeText} allowFontScaling={false}>
+                      {location.code}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.locationInfo}>
+                    <ThemedText style={styles.locationName} allowFontScaling={false}>
+                      {location.name}
+                    </ThemedText>
+                    <ThemedText style={styles.locationPoints} allowFontScaling={false}>
+                      {location.points} {raceDetails.pointsName || 'punti'}
+                    </ThemedText>
+                  </View>
                 </View>
-                <View style={styles.locationInfo}>
-                  <ThemedText style={styles.locationName} allowFontScaling={false}>
-                    {location.name}
+                {location.description && (
+                  <ThemedText style={styles.locationDescription} allowFontScaling={false}>
+                    {location.description}
                   </ThemedText>
-                  <ThemedText style={styles.locationPoints} allowFontScaling={false}>
-                    {location.points} {raceDetails.pointsName || 'punti'}
-                  </ThemedText>
-                </View>
+                )}
+                {location.address && (
+                  <View style={styles.locationCoords}>
+                    <Icon name="map-marker" size={12} color="#666" />
+                    <ThemedText style={styles.coordsText} allowFontScaling={false}>
+                      {location.address.latitude?.toFixed(6) || 'N/A'}, {location.address.longitude?.toFixed(6) || 'N/A'}
+                    </ThemedText>
+                  </View>
+                )}
+                {racerTime?.done && racerTime.arrivalDate && (
+                  <View style={styles.arrivalTime}>
+                    <Icon name="check-circle" size={14} color="#4CAF50" />
+                    <ThemedText style={styles.arrivalText} allowFontScaling={false}>
+                      Arrivato: {racerTime.arrivalDate}
+                    </ThemedText>
+                  </View>
+                )}
+                {!racerTime?.done && (
+                  <View style={styles.notDone}>
+                    <Icon name="times-circle" size={14} color="#F44336" />
+                    <ThemedText style={styles.notDoneText} allowFontScaling={false}>
+                      Non completato
+                    </ThemedText>
+                  </View>
+                )}
               </View>
-              {location.description && (
-                <ThemedText style={styles.locationDescription} allowFontScaling={false}>
-                  {location.description}
-                </ThemedText>
-              )}
-              {location.address && (
-                <View style={styles.locationCoords}>
-                  <Icon name="map-marker" size={12} color="#666" />
-                  <ThemedText style={styles.coordsText} allowFontScaling={false}>
-                    {location.address.latitude?.toFixed(6) || 'N/A'}, {location.address.longitude?.toFixed(6) || 'N/A'}
-                  </ThemedText>
-                </View>
-              )}
-            </View>
-          )) || (
+            );
+          }) || (
             <View style={styles.emptySection}>
               <ThemedText style={styles.emptyText} allowFontScaling={false}>
                 Nessuna tappa disponibile
@@ -456,23 +524,30 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   raceHeader: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#FFD700',
+    borderColor: 'rgba(255, 215, 0, 0.1)',
   },
   raceName: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#022C43',
     textAlign: 'center',
+  },
+  completedText: {
+    fontSize: 16,
+    color: '#4CAF50',
+    textAlign: 'center',
+    marginTop: 8,
+    fontWeight: '600',
   },
   section: {
     marginBottom: 20,
@@ -484,16 +559,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   infoCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#FFD700',
+    borderColor: 'rgba(255, 215, 0, 0.1)',
   },
   infoRow: {
     flexDirection: 'row',
@@ -525,17 +600,17 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   locationCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#FFD700',
+    borderColor: 'rgba(255, 215, 0, 0.1)',
   },
   locationHeader: {
     flexDirection: 'row',
@@ -550,6 +625,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+  },
+  locationCodeDone: {
+    backgroundColor: '#4CAF50',
   },
   locationCodeText: {
     fontSize: 16,
@@ -585,18 +663,40 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontFamily: 'monospace',
   },
+  arrivalTime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  arrivalText: {
+    fontSize: 14,
+    color: '#4CAF50',
+    marginLeft: 6,
+    fontWeight: '600',
+  },
+  notDone: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  notDoneText: {
+    fontSize: 14,
+    color: '#F44336',
+    marginLeft: 6,
+    fontWeight: '600',
+  },
   comboCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#FFD700',
+    borderColor: 'rgba(255, 215, 0, 0.1)',
   },
   comboHeader: {
     flexDirection: 'row',
@@ -620,16 +720,16 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   noteCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#FFD700',
+    borderColor: 'rgba(255, 215, 0, 0.1)',
   },
   noteText: {
     fontSize: 14,
@@ -655,25 +755,6 @@ const styles = StyleSheet.create({
     color: '#022C43',
     marginLeft: 6,
   },
-  startButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFD700',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  startButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#022C43',
-    marginRight: 6,
-  },
   headerButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -681,17 +762,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptySection: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderRadius: 16,
     padding: 20,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#FFD700',
+    borderColor: 'rgba(255, 215, 0, 0.1)',
   },
   emptyText: {
     fontSize: 14,

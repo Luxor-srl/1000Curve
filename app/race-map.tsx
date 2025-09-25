@@ -33,11 +33,12 @@ export default function RaceMapScreen() {
   const raceName = params.raceName as string;
   const pointsName = params.pointsName as string;
   const raceLocations = params.raceLocations ? JSON.parse(params.raceLocations as string) : [];
+  const racerLocationTimes = params.racerLocationTimes ? JSON.parse(params.racerLocationTimes as string) : [];
   const router = useRouter();
   const [userInfo, setUserInfo] = useState<any>(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
 
-  console.log('RaceMap params:', { raceSlug, raceName, pointsName, raceLocationsCount: raceLocations.length });
+  console.log('RaceMap params:', { raceSlug, raceName, pointsName, raceLocationsCount: raceLocations.length, racerLocationTimesCount: racerLocationTimes.length });
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -153,13 +154,17 @@ export default function RaceMapScreen() {
 
     console.log('Map center:', centerLat, centerLng);
 
-    const locationsData = validLocations.map((loc: RaceLocation) => ({
-      lat: loc.address.latitude,
-      lng: loc.address.longitude,
-      code: loc.code,
-      name: loc.name,
-      points: loc.points
-    }));
+    const locationsData = validLocations.map((loc: RaceLocation) => {
+      const racerTime = racerLocationTimes.find((rt: any) => rt.code === loc.code);
+      return {
+        lat: loc.address.latitude,
+        lng: loc.address.longitude,
+        code: loc.code,
+        name: loc.name,
+        points: loc.points,
+        done: racerTime ? racerTime.done : false
+      };
+    });
 
     const html = `
       <!DOCTYPE html>
@@ -185,6 +190,9 @@ export default function RaceMapScreen() {
               font-weight: bold;
               color: #022C43;
               box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+            .custom-marker-done {
+              background-color: #4CAF50;
             }
             .leaflet-popup-content-wrapper {
               background: #FFD700;
@@ -262,8 +270,9 @@ export default function RaceMapScreen() {
               console.log('Locations to render:', locations);
 
               locations.forEach(function(location) {
+                var className = location.done ? 'custom-marker custom-marker-done' : 'custom-marker';
                 var customIcon = L.divIcon({
-                  className: 'custom-marker',
+                  className: className,
                   html: location.code,
                   iconSize: [24, 24],
                   iconAnchor: [12, 12]
