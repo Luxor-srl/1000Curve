@@ -3,14 +3,16 @@ import Sidebar from '@/components/Sidebar';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { clearOffRunAuthData, getOffRunAuthData } from '@/utils/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
 export default function OffRunScreen() {
   const router = useRouter();
   const [userInfo, setUserInfo] = useState<any>(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+  const [asyncStorageData, setAsyncStorageData] = useState<any>({});
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -18,6 +20,27 @@ export default function OffRunScreen() {
         const authData = await getOffRunAuthData();
         if (authData.isAuthenticated && authData.userData) {
           setUserInfo(authData.userData);
+
+          // Carica tutto AsyncStorage per debug
+          const keys = await AsyncStorage.getAllKeys();
+          const data: any = {};
+          for (const key of keys) {
+            const value = await AsyncStorage.getItem(key);
+            data[key] = value ? JSON.parse(value) : null;
+          }
+          setAsyncStorageData(data);
+          console.log('AsyncStorage completo:', data);
+
+          // Controlla se c'è una gara Off-Run attiva
+          const sessionString = await AsyncStorage.getItem('raceSession');
+          if (sessionString) {
+            const session = JSON.parse(sessionString);
+            // Se non ha finishDate, significa che è attiva
+            if (!session.finishDate) {
+              router.replace('/gara-off-run');
+              return;
+            }
+          }
         } else {
           // Se non ci sono dati utente, torna al login
           router.replace('/');
@@ -85,6 +108,11 @@ export default function OffRunScreen() {
         <ThemedText style={styles.contentText} allowFontScaling={false}>
           Contenuti e funzionalità Off-Run
         </ThemedText>
+        <ScrollView style={styles.debugContainer}>
+          <ThemedText style={styles.debugText} allowFontScaling={false}>
+            AsyncStorage: {JSON.stringify(asyncStorageData, null, 2)}
+          </ThemedText>
+        </ScrollView>
       </View>
 
       <Sidebar isVisible={isSidebarVisible} onClose={handleSidebarClose} />
@@ -108,5 +136,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#666',
     textAlign: 'center',
+  },
+  debugContainer: {
+    maxHeight: 200,
+    width: '100%',
+    marginTop: 20,
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'left',
+    fontFamily: 'monospace',
   },
 });

@@ -29,6 +29,10 @@ export default function RootLayout() {
           <Stack.Screen name="races" options={{ headerShown: false }} />
           <Stack.Screen name="race-details" options={{ headerShown: false }} />
           <Stack.Screen name="StartScreen" options={{ headerShown: false }} />
+          <Stack.Screen name="off-run" options={{ headerShown: false }} />
+          <Stack.Screen name="gara-off-run" options={{ headerShown: false }} />
+          <Stack.Screen name="start-race" options={{ headerShown: false }} />
+          <Stack.Screen name="finish-race" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />

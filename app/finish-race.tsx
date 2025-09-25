@@ -4,33 +4,32 @@ import { ThemedText } from '@/components/ThemedText';
 import { useLiveLocation } from '@/hooks/useLiveLocation';
 import { clearOffRunAuthData, getOffRunAuthData } from '@/utils/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-interface StartLocation {
+interface FinishLocation {
   latitude: number;
   longitude: number;
 }
 
-export default function StartRaceScreen() {
+export default function FinishRaceScreen() {
   const params = useLocalSearchParams();
   const raceSlug = params.raceSlug as string;
   const raceName = params.raceName as string;
-  const startLocation = params.startLocation ? JSON.parse(params.startLocation as string) : null;
+  const finishLocation = params.finishLocation ? JSON.parse(params.finishLocation as string) : null;
   const router = useRouter();
   const [userInfo, setUserInfo] = useState<any>(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
-  const [canStart, setCanStart] = useState(false);
-  const [isStarting, setIsStarting] = useState(false);
+  const [canFinish, setCanFinish] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   // Hook per la geolocalizzazione
   const { location, errorMsg: locationError } = useLiveLocation();
 
-  console.log('StartRace params:', { raceSlug, raceName, startLocation });
+  console.log('FinishRace params:', { raceSlug, raceName, finishLocation });
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -51,28 +50,28 @@ export default function StartRaceScreen() {
 
   // Calcola la distanza quando cambia la posizione
   useEffect(() => {
-    if (location && startLocation) {
+    if (location && finishLocation) {
       const userLat = location.latitude;
       const userLng = location.longitude;
-      const startLat = startLocation.latitude;
-      const startLng = startLocation.longitude;
+      const finishLat = finishLocation.latitude;
+      const finishLng = finishLocation.longitude;
 
       // Calcola la distanza usando la formula di Haversine (distanza in metri)
       const R = 6371000; // Raggio della Terra in metri
-      const dLat = (startLat - userLat) * Math.PI / 180;
-      const dLng = (startLng - userLng) * Math.PI / 180;
+      const dLat = (finishLat - userLat) * Math.PI / 180;
+      const dLng = (finishLng - userLng) * Math.PI / 180;
       const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(userLat * Math.PI / 180) * Math.cos(startLat * Math.PI / 180) *
+                Math.cos(userLat * Math.PI / 180) * Math.cos(finishLat * Math.PI / 180) *
                 Math.sin(dLng/2) * Math.sin(dLng/2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       const calculatedDistance = R * c;
 
       setDistance(calculatedDistance);
-      setCanStart(calculatedDistance <= 50); // 50 metri
+      setCanFinish(calculatedDistance <= 50); // 50 metri
 
-      console.log('Distance calculated:', calculatedDistance, 'meters, canStart:', calculatedDistance <= 50);
+      console.log('Distance calculated:', calculatedDistance, 'meters, canFinish:', calculatedDistance <= 50);
     }
-  }, [location, startLocation]);
+  }, [location, finishLocation]);
 
   const handleSidebarOpen = () => {
     setIsSidebarVisible(true);
@@ -97,6 +96,7 @@ export default function StartRaceScreen() {
           onPress: async () => {
             try {
               await clearOffRunAuthData();
+              await AsyncStorage.removeItem('raceSession');
               router.replace('/');
             } catch (error) {
               console.error('Errore durante il logout:', error);
@@ -109,142 +109,52 @@ export default function StartRaceScreen() {
   };
 
   const handleOpenMaps = () => {
-    if (startLocation) {
-      const { latitude, longitude } = startLocation;
+    if (finishLocation) {
+      const { latitude, longitude } = finishLocation;
       const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
       Linking.openURL(url);
     }
   };
 
-  const handleStartRace = async () => {
-    if (!canStart) return;
+  const handleFinishRace = async () => {
+    if (!canFinish) return;
 
     try {
-      // Mostra loading
-      setIsStarting(true);
+      setIsFinishing(true);
 
-      const authData = await getOffRunAuthData();
-      if (!authData.isAuthenticated || !authData.userData) {
-        Alert.alert('Errore', 'Dati utente non disponibili');
-        return;
+      // Aggiorna la sessione con la data di fine
+      const sessionString = await AsyncStorage.getItem('raceSession');
+      if (sessionString) {
+        const session = JSON.parse(sessionString);
+        session.finishDate = new Date().toISOString();
+        await AsyncStorage.setItem('raceSession', JSON.stringify(session));
+
+        // Aggiungi alla lista delle gare completate
+        const completedString = await AsyncStorage.getItem('completedRaces');
+        let completed = completedString ? JSON.parse(completedString) : [];
+        completed.push(session);
+        await AsyncStorage.setItem('completedRaces', JSON.stringify(completed));
       }
 
-      // Fetch race data to get START location
-      const headers = {
-        'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
-      };
-      const paramsRace = new URLSearchParams({
-        action: 'get',
-        getAction: 'getRace',
-        slug: raceSlug,
-      });
-      const urlRace = `https://crm.1000curve.com/Race?${paramsRace.toString()}`;
-      const responseRace = await fetch(urlRace, { method: 'GET', headers });
-      const textRace = await responseRace.text();
-      // Log curl per Postman
-      const curlCommandRace = `curl -X GET "${urlRace}" -H "Api-Key: uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW"`;
-      console.log('CURL per Postman (dati gara per START):', curlCommandRace);
-      let raceData = null;
-      try {
-        raceData = textRace ? JSON.parse(textRace) : null;
-      } catch (e) {
-        console.error('Errore parsing JSON /Race:', e, textRace);
-      }
-      const startLocationFromRace = raceData?.raceLocations?.find((loc: any) => loc.name?.toUpperCase().includes('START') || loc.code?.toUpperCase().includes('START'));
+      // Pulisci AsyncStorage mantenendo solo i dati utente e le gare completate
+      const keysToRemove = ['raceSession', 'pendingCookies', 'raceData'];
+      await AsyncStorage.multiRemove(keysToRemove);
 
-      // Chiamata API per iniziare la sessione
-      const params = new URLSearchParams({
-        action: 'set',
-        setAction: 'startRaceSession',
-        email: authData.userData.email,
-        raceSlug: raceSlug,
-      });
-
-      const url = `https://crm.1000curve.com/Racer?${params.toString()}`;
-      console.log('API URL:', url);
-      // Log curl per Postman
-      const curlCommandSession = `curl -X GET "${url}" -H "Api-Key: uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW"`;
-      console.log('CURL per Postman (avvio sessione):', curlCommandSession);
-      const response = await fetch(url, { 
-        method: 'GET',
-        headers: {
-          'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+      // Mostra messaggio di successo
+      Alert.alert('Gara completata!', 'Complimenti! Hai finito la gara.', [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Torna alla home off-run
+            router.replace('/off-run');
+          },
         },
-      });
-      console.log('Response status:', response.status);
-      console.log('Response redirected:', response.redirected);
-      console.log('Response url:', response.url);
-      console.log('Response content-type:', response.headers.get('content-type'));
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-      const text = await response.text();
-      console.log('Response text:', text);
-
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (parseError) {
-        console.error('Parse error:', parseError);
-        throw new Error('Risposta API non valida');
-      }
-
-      if (data && data.clientId) {
-        // Salva id, clientId, data e ora corrente in AsyncStorage
-        const sessionData = {
-          id: data.id,
-          clientId: data.clientId,
-          startDate: new Date().toISOString(),
-          raceSlug: raceSlug,
-        };
-        await AsyncStorage.setItem('raceSession', JSON.stringify(sessionData));
-
-        // Registra il cookie START
-        if (startLocationFromRace) {
-          const timestamp = Math.floor(Date.now() / 1000);
-          const netState = await NetInfo.fetch();
-          if (netState.isConnected) {
-            const paramsSet = new URLSearchParams({
-              action: 'set',
-              setAction: 'setRacerLocationTime',
-              racerId: data.id,
-              racerClientId: data.clientId,
-              raceLocationCode: startLocationFromRace.code,
-              timestamp: String(timestamp),
-            });
-            const urlSet = `https://crm.1000curve.com/CRMRaceLog?${paramsSet.toString()}`;
-            const headersSet = {
-              'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
-              'Accept': '*/*',
-              'Accept-Language': 'it',
-              'Referer': 'https://crm.1000curve.com/app/race.html',
-              'X-Requested-With': 'XMLHttpRequest',
-              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-            };
-            try {
-              const responseSet = await fetch(urlSet, { method: 'GET', headers: headersSet, credentials: 'include' });
-              const textSet = await responseSet.text();
-              console.log('Risposta registrazione START:', textSet);
-              // Log curl per Postman
-              const curlCommand = `curl -X GET "${urlSet}" -H "Api-Key: uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW" -H "Accept: */*" -H "Accept-Language: it" -H "Referer: https://crm.1000curve.com/app/race.html" -H "X-Requested-With: XMLHttpRequest" -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36" --include`;
-              console.log('CURL per Postman (registrazione START):', curlCommand);
-            } catch (error) {
-              console.error('Errore registrazione START:', error);
-              // Non bloccare, continua
-            }
-          } else {
-            // Offline, non registrare per ora
-          }
-        }
-
-        // Naviga a gara-off-run
-        router.push({ pathname: '/gara-off-run' as any });
-      } else {
-        Alert.alert('Errore', 'Impossibile iniziare la gara. Riprova.');
-      }
+      ]);
     } catch (error) {
-      console.error('Errore nell\'iniziare la gara:', error);
-      Alert.alert('Errore', 'Errore di connessione. Riprova.');
+      console.error('Errore nel completare la gara:', error);
+      Alert.alert('Errore', 'Errore durante il completamento. Riprova.');
     } finally {
-      setIsStarting(false);
+      setIsFinishing(false);
     }
   };
 
@@ -268,7 +178,7 @@ export default function StartRaceScreen() {
     );
   }
 
-  if (!startLocation) {
+  if (!finishLocation) {
     return (
       <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
         <Stack.Screen options={{ headerShown: false }} />
@@ -280,7 +190,7 @@ export default function StartRaceScreen() {
         <View style={styles.errorContainer}>
           <Icon name="exclamation-triangle" size={48} color="#ccc" />
           <ThemedText style={styles.errorText} allowFontScaling={false}>
-            Coordinate del punto di partenza non disponibili
+            Coordinate del punto di arrivo non disponibili
           </ThemedText>
         </View>
         <Sidebar isVisible={isSidebarVisible} onClose={handleSidebarClose} />
@@ -302,7 +212,7 @@ export default function StartRaceScreen() {
         <TouchableOpacity style={[styles.backButton, { position: 'absolute', top: 20, left: 20 }]} onPress={() => router.back()}>
           <Icon name="arrow-left" size={16} color="#022C43" />
           <ThemedText style={styles.backButtonText} allowFontScaling={false}>
-            Dettagli gara
+            Gara Off-Run
           </ThemedText>
         </TouchableOpacity>
 
@@ -310,9 +220,9 @@ export default function StartRaceScreen() {
         <View style={styles.centeredBlock}>
           {/* Box istruzioni in alto */}
           <View style={styles.instructionCard}>
-            <Icon name="map-marker" size={48} color="#FFD700" />
+            <Icon name="flag-checkered" size={48} color="#FFD700" />
             <ThemedText style={styles.instructionTitle} allowFontScaling={false}>
-              Recati al punto di partenza (START) per iniziare la gara
+              Recati al punto di arrivo (FINISH) per completare la gara
             </ThemedText>
 
             {location && (
@@ -347,19 +257,19 @@ export default function StartRaceScreen() {
             </ThemedText>
           </TouchableOpacity>
 
-          {/* Pulsante START sempre visibile */}
+          {/* Pulsante FINISH sempre visibile */}
           <TouchableOpacity
-            style={[styles.startRaceButton, !canStart && styles.startRaceButtonDisabled]}
-            onPress={handleStartRace}
-            disabled={!canStart || isStarting}
+            style={[styles.finishRaceButton, !canFinish && styles.finishRaceButtonDisabled]}
+            onPress={handleFinishRace}
+            disabled={!canFinish || isFinishing}
           >
-            {isStarting ? (
-              <ActivityIndicator size="small" color={canStart ? "#022C43" : "#999"} />
+            {isFinishing ? (
+              <ActivityIndicator size="small" color={canFinish ? "#022C43" : "#999"} />
             ) : (
               <>
-                <Icon name="play" size={24} color={canStart ? "#022C43" : "#999"} />
-                <ThemedText style={[styles.startRaceButtonText, !canStart && styles.startRaceButtonTextDisabled]} allowFontScaling={false}>
-                  START
+                <Icon name="flag" size={24} color={canFinish ? "#022C43" : "#999"} />
+                <ThemedText style={[styles.finishRaceButtonText, !canFinish && styles.finishRaceButtonTextDisabled]} allowFontScaling={false}>
+                  FINISH
                 </ThemedText>
               </>
             )}
@@ -481,7 +391,7 @@ const styles = StyleSheet.create({
     color: '#022C43',
     marginLeft: 8,
   },
-  startRaceButton: {
+  finishRaceButton: {
     backgroundColor: '#FFD700',
     borderRadius: 25,
     paddingVertical: 16,
@@ -496,18 +406,18 @@ const styles = StyleSheet.create({
     elevation: 6,
     minWidth: 200,
   },
-  startRaceButtonDisabled: {
+  finishRaceButtonDisabled: {
     backgroundColor: '#cccccc',
     shadowOpacity: 0.1,
     elevation: 2,
   },
-  startRaceButtonText: {
+  finishRaceButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#022C43',
     marginLeft: 8,
   },
-  startRaceButtonTextDisabled: {
+  finishRaceButtonTextDisabled: {
     color: '#999',
   },
 });
