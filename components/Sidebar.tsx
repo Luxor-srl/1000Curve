@@ -47,6 +47,8 @@ export default function Sidebar({ isVisible, onClose }: SidebarProps) {
     }
   }, [isVisible, slideAnim, fadeAnim]);
 
+  if (!isVisible) return null;
+
   return (
     <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
       <TouchableOpacity style={styles.overlayTouchable} onPress={onClose} />

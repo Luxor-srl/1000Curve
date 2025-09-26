@@ -299,7 +299,7 @@ export default function StartRaceScreen() {
 
       <View style={styles.contentContainer}>
         {/* Pulsante indietro */}
-        <TouchableOpacity style={[styles.backButton, { position: 'absolute', top: 20, left: 20 }]} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Icon name="arrow-left" size={16} color="#022C43" />
           <ThemedText style={styles.backButtonText} allowFontScaling={false}>
             Dettagli gara
@@ -411,6 +411,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 16,
+    marginTop: 20,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

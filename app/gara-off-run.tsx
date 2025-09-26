@@ -83,16 +83,6 @@ const sendPendingCookies = async () => {
 };
 
 // Effetto: invia i cookie in attesa quando torna online
-useEffect(() => {
-  const unsubscribe = NetInfo.addEventListener(state => {
-    if (state.isConnected) {
-      sendPendingCookies();
-    }
-  });
-  // Prova anche all'avvio
-  sendPendingCookies();
-  return () => unsubscribe();
-}, []);
 
 export default function GaraOffRunScreen() {
   const router = useRouter();
@@ -482,6 +472,18 @@ export default function GaraOffRunScreen() {
       }
     }
   }, [cookiesList, parsed, racer]);
+
+  // Effetto: invia i cookie in attesa quando torna online
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      if (state.isConnected) {
+        sendPendingCookies();
+      }
+    });
+    // Prova anche all'avvio
+    sendPendingCookies();
+    return () => unsubscribe();
+  }, []);
 
   if (!parsed || !racer) {
     return (
