@@ -25,8 +25,41 @@ export default function OffRunScreen() {
       try {
         const authData = await getOffRunAuthData();
         if (authData.isAuthenticated && authData.userData) {
-          setUserInfo(authData.userData);
-          // Carica riepilogo is now handled by the hook
+          // Chiamata API per recuperare le informazioni complete dell'utente
+          try {
+            const params = new URLSearchParams({
+              action: 'get',
+              getAction: 'getInfo',
+              username: authData.userData.username,
+            });
+            const url = `https://crm.1000curve.com/RaceUser?${params.toString()}`;
+            const headers = {
+              'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
+            };
+            
+            console.log('[DEBUG] Caricamento informazioni utente da /RaceUser');
+            console.log('URL:', url);
+            
+            const response = await fetch(url, { method: 'GET', headers });
+            const text = await response.text();
+            console.log('Response /RaceUser:', text);
+            
+            const userData = JSON.parse(text);
+            if (userData.firstname && userData.lastname) {
+              // Aggiorna i dati utente con nome e cognome completi
+              setUserInfo({
+                ...authData.userData,
+                firstname: userData.firstname,
+                lastname: userData.lastname,
+              });
+            } else {
+              setUserInfo(authData.userData);
+            }
+          } catch (apiError) {
+            console.error('Errore nel recupero informazioni utente da API:', apiError);
+            // In caso di errore, usa i dati cached
+            setUserInfo(authData.userData);
+          }
 
           // Controlla se c'è una gara Off-Run attiva
           const sessionString = await AsyncStorage.getItem('raceSession');
@@ -106,7 +139,7 @@ export default function OffRunScreen() {
       <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
       <YellowGradientBackground />
       <RaceHeader 
-        pilotName={userInfo.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''} 
+        pilotName="" 
         onSidebarPress={handleSidebarOpen} 
         onLogoutPress={handleLogout} 
       />
