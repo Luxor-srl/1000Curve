@@ -7,9 +7,10 @@ interface RaceHeaderProps {
   onSidebarPress: () => void;
   onLogoutPress: () => void;
   showSidebarButton?: boolean;
+  onLogoPress?: () => void;
 }
 
-const RaceHeader: React.FC<RaceHeaderProps> = ({ pilotName, onSidebarPress, onLogoutPress, showSidebarButton = true }) => {
+const RaceHeader: React.FC<RaceHeaderProps> = ({ pilotName, onSidebarPress, onLogoutPress, showSidebarButton = true, onLogoPress }) => {
   const { height: screenHeight } = Dimensions.get('window');
   const isSmallScreen = screenHeight < 700; // Consideriamo piccoli gli schermi sotto i 700px
 
@@ -20,11 +21,21 @@ const RaceHeader: React.FC<RaceHeaderProps> = ({ pilotName, onSidebarPress, onLo
           <Ionicons name="menu" size={isSmallScreen ? 26 : 30} color="black" />
         </TouchableOpacity>
       )}
-      <Image
-        source={require('@/assets/images/logo-mille-dark.png')}
-        style={[styles.logo, isSmallScreen && styles.logoSmall]}
-        resizeMode="contain"
-      />
+      {onLogoPress ? (
+        <TouchableOpacity onPress={onLogoPress} activeOpacity={0.7}>
+          <Image
+            source={require('@/assets/images/logo-mille-dark.png')}
+            style={[styles.logo, isSmallScreen && styles.logoSmall]}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      ) : (
+        <Image
+          source={require('@/assets/images/logo-mille-dark.png')}
+          style={[styles.logo, isSmallScreen && styles.logoSmall]}
+          resizeMode="contain"
+        />
+      )}
       <View style={styles.pilotInfoContainer}>
         <Text style={[styles.pilotName, isSmallScreen && styles.pilotNameSmall]}>{pilotName}</Text>
         <TouchableOpacity 

@@ -5,6 +5,7 @@ import { useLiveLocation } from '@/hooks/useLiveLocation';
 import { clearOffRunAuthData, getOffRunAuthData } from '@/utils/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import * as Haptics from 'expo-haptics';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -73,6 +74,11 @@ export default function StartRaceScreen() {
       console.log('Distance calculated:', calculatedDistance, 'meters, canStart:', calculatedDistance <= 50);
     }
   }, [location, startLocation]);
+
+  const handleLogoPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/off-run');
+  };
 
   const handleSidebarOpen = () => {
     setIsSidebarVisible(true);
@@ -199,7 +205,7 @@ export default function StartRaceScreen() {
 
         // Registra il cookie START
         if (startLocationFromRace) {
-          const timestamp = Math.floor(Date.now() / 1000);
+          const timestamp = Date.now();
           const netState = await NetInfo.fetch();
           if (netState.isConnected) {
             const paramsSet = new URLSearchParams({
@@ -295,6 +301,7 @@ export default function StartRaceScreen() {
         pilotName={userInfo.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
         onSidebarPress={handleSidebarOpen}
         onLogoutPress={handleLogout}
+        onLogoPress={handleLogoPress}
       />
 
       <View style={styles.contentContainer}>

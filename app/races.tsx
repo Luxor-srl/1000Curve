@@ -4,6 +4,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import YellowGradientBackground from '@/components/YellowGradientBackground';
 import { clearOffRunAuthData, getOffRunAuthData } from '@/utils/auth';
+import * as Haptics from 'expo-haptics';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -87,6 +88,11 @@ export default function RacesScreen() {
     }
   };
 
+  const handleLogoPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/off-run');
+  };
+
   const handleSidebarOpen = () => {
     setIsSidebarVisible(true);
   };
@@ -121,57 +127,59 @@ export default function RacesScreen() {
     );
   };
 
-  const renderRaceItem = ({ item }: { item: Race }) => (
-    <TouchableOpacity
-      style={styles.raceItem}
-      activeOpacity={0.7}
-      onPress={() => {
-        router.push({
-          pathname: '/race-details',
-          params: { raceSlug: item.slug }
-        });
-      }}
-    >
-      <View style={styles.raceItemContent}>
-        <View style={styles.raceHeader}>
-          <ThemedText style={styles.raceName} allowFontScaling={false}>
-            {item.name}
-          </ThemedText>
-        </View>
-
-        <View style={styles.raceDetails}>
-          {item.roadbookUrl && (
-            <TouchableOpacity
-              style={styles.detailRow}
-              activeOpacity={0.7}
-              onPress={() => {
-                router.push({
-                  pathname: '/roadbook',
-                  params: {
-                    roadbookUrl: item.roadbookUrl,
-                    raceName: item.name
-                  }
-                });
-              }}
-            >
-              <Icon name="file-pdf-o" size={12} color="#FFD700" />
-              <ThemedText style={styles.detailText} allowFontScaling={false}>
-                Roadbook disponibile
+  const renderRaceItem = ({ item }: { item: Race }) => {
+    return (
+      <TouchableOpacity
+        style={styles.raceItem}
+        activeOpacity={0.7}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          router.push({
+            pathname: '/race-details',
+            params: { raceSlug: item.slug }
+          });
+        }}
+      >
+        <View style={styles.raceItemContent}>
+          <View style={styles.raceHeader}>
+            <View style={styles.raceIconContainer}>
+              <Icon name="flag-checkered" size={20} color="#022C43" />
+            </View>
+            <View style={styles.raceMainInfo}>
+              <ThemedText style={styles.raceName} allowFontScaling={false}>
+                {item.name}
               </ThemedText>
-              <Icon name="chevron-right" size={10} color="#022C43" style={{ marginLeft: 'auto' }} />
-            </TouchableOpacity>
-          )}
+            </View>
+          </View>
 
-          <View style={styles.tapIndicator}>
-            <Icon name="chevron-right" size={14} color="#022C43" />
-            <ThemedText style={styles.tapText} allowFontScaling={false}>
-              Tocca per dettagli
-            </ThemedText>
+          <View style={styles.raceDetails}>
+            {item.roadbookUrl && (
+              <TouchableOpacity
+                style={styles.roadbookButton}
+                activeOpacity={0.7}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push({
+                    pathname: '/roadbook',
+                    params: {
+                      roadbookUrl: item.roadbookUrl,
+                      raceName: item.name
+                    }
+                  });
+                }}
+              >
+                <Icon name="file-pdf-o" size={14} color="#fff" />
+                <ThemedText style={styles.roadbookButtonText} allowFontScaling={false}>
+                  Roadbook
+                </ThemedText>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   if (!userInfo) {
     return (
@@ -189,12 +197,13 @@ export default function RacesScreen() {
         pilotName={userInfo.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
         onSidebarPress={handleSidebarOpen}
         onLogoutPress={handleLogout}
+        onLogoPress={handleLogoPress}
       />
 
       <View style={styles.contentContainer}>
         <View style={styles.headerContainer}>
           <ThemedText style={styles.title} allowFontScaling={false}>
-            Lista delle Gare
+            Tutte le Off-Run
           </ThemedText>
           <TouchableOpacity
             style={styles.refreshButton}
@@ -281,39 +290,115 @@ const styles = StyleSheet.create({
   },
   raceItem: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#FFD700',
+    borderColor: 'rgba(255, 215, 0, 0.2)',
   },
   raceItemContent: {
-    padding: 16,
+    padding: 20,
+    position: 'relative',
   },
   raceHeader: {
-    marginBottom: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 0,
+  },
+  raceIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFD700',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  raceMainInfo: {
+    flex: 1,
   },
   raceName: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#022C43',
+    marginBottom: 4,
   },
-  raceDetails: {
-    marginTop: 8,
-  },
-  detailRow: {
+  activeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
   },
-  detailText: {
-    fontSize: 12,
+  activeBadgeText: {
+    fontSize: 11,
+    color: '#4CAF50',
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  pastBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  pastBadgeText: {
+    fontSize: 11,
+    color: '#999',
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  raceDetails: {
+    gap: 10,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateText: {
+    fontSize: 14,
     color: '#666',
-    marginLeft: 6,
+    marginLeft: 8,
+  },
+  pointsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pointsText: {
+    fontSize: 14,
+    color: '#FFD700',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  roadbookButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#022C43',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  roadbookButtonText: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  chevronContainer: {
+    position: 'absolute',
+    right: 20,
+    top: 20,
   },
   emptyContainer: {
     flex: 1,
@@ -326,21 +411,5 @@ const styles = StyleSheet.create({
     color: '#ccc',
     marginTop: 16,
     textAlign: 'center',
-  },
-  tapIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#FFD700',
-    borderRadius: 6,
-  },
-  tapText: {
-    fontSize: 12,
-    color: '#022C43',
-    marginLeft: 6,
-    fontWeight: '600',
   },
 });

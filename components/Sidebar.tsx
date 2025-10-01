@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Animated, Image, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from './ThemedText';
 
 interface SidebarProps {
@@ -65,12 +65,17 @@ export default function Sidebar({ isVisible, onClose }: SidebarProps) {
         </View>
         
         <View style={styles.menuItems}>
+          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onClose(); router.push('/off-run'); }}>
+            <Ionicons name="home-outline" size={20} color="#000" style={styles.menuIcon} />
+            <ThemedText style={styles.menuText}>Home</ThemedText>
+          </TouchableOpacity>
+          
           <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onClose(); router.push('/my-races'); }}>
             <Ionicons name="trophy-outline" size={20} color="#000" style={styles.menuIcon} />
             <ThemedText style={styles.menuText}>Le Mie Gare</ThemedText>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); console.log('Cookie preferiti pressed'); }}>
+          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onClose(); router.push('/favorite-cookies'); }}>
             <Ionicons name="heart-outline" size={20} color="#000" style={styles.menuIcon} />
             <ThemedText style={styles.menuText}>Cookie preferiti</ThemedText>
           </TouchableOpacity>
@@ -156,12 +161,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginVertical: 5,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: Platform.select({
+      ios: 'rgba(255, 255, 255, 0.8)',
+      android: '#FFFFFF',
+    }),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: Platform.select({
+      ios: 3,
+      android: 0,
+    }),
   },
   menuIcon: {
     marginRight: 15,
@@ -184,12 +195,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginVertical: 5,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)', // Più trasparente
+    backgroundColor: Platform.select({
+      ios: 'rgba(255, 255, 255, 0.4)',
+      android: 'rgba(255, 255, 255, 0.8)',
+    }),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05, // Meno ombra
+    shadowOpacity: 0.05,
     shadowRadius: 2,
-    elevation: 1, // Meno elevazione
+    elevation: Platform.select({
+      ios: 1,
+      android: 0,
+    }),
   },
   comingSoonText: {
     fontSize: 16,

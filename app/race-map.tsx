@@ -2,6 +2,7 @@ import RaceHeader from '@/components/RaceHeader';
 import Sidebar from '@/components/Sidebar';
 import { ThemedText } from '@/components/ThemedText';
 import { clearOffRunAuthData, getOffRunAuthData } from '@/utils/auth';
+import * as Haptics from 'expo-haptics';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -56,6 +57,11 @@ export default function RaceMapScreen() {
     };
     loadUserData();
   }, [router]);
+
+  const handleLogoPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/off-run');
+  };
 
   const handleSidebarOpen = () => {
     setIsSidebarVisible(true);
@@ -328,6 +334,7 @@ export default function RaceMapScreen() {
         pilotName={userInfo.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
         onSidebarPress={handleSidebarOpen}
         onLogoutPress={handleLogout}
+        onLogoPress={handleLogoPress}
       />
 
       {/* Header con titolo e pulsante indietro */}

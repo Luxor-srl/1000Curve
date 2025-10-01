@@ -2,6 +2,7 @@ import RaceHeader from '@/components/RaceHeader';
 import Sidebar from '@/components/Sidebar';
 import { ThemedText } from '@/components/ThemedText';
 import YellowGradientBackground from '@/components/YellowGradientBackground';
+import { CompletedRace, useCompletedRaces } from '@/hooks/useCompletedRaces';
 import { getOffRunAuthData } from '@/utils/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
@@ -10,73 +11,31 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-interface CompletedRace {
-  id: string;
-  clientId: string;
-  startDate: string;
-  finishDate: string;
-  raceSlug: string;
-  raceName?: string;
-}
-
 export default function MyRacesScreen() {
   const router = useRouter();
   const [userInfo, setUserInfo] = useState<any>(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
-  const [completedRaces, setCompletedRaces] = useState<CompletedRace[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { completedRaces, loading } = useCompletedRaces();
 
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
   };
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadUserData = async () => {
       try {
         const authData = await getOffRunAuthData();
         if (authData.isAuthenticated && authData.userData) {
           setUserInfo(authData.userData);
-
-          // Carica le gare completate
-          const completedString = await AsyncStorage.getItem('completedRaces');
-          if (completedString) {
-            const races = JSON.parse(completedString);
-            // Per ogni gara, ottieni il nome dalla API se possibile
-            const racesWithNames = await Promise.all(
-              races.map(async (race: CompletedRace) => {
-                try {
-                  const headers = {
-                    'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
-                  };
-                  const params = new URLSearchParams({
-                    action: 'get',
-                    getAction: 'getRace',
-                    slug: race.raceSlug,
-                  });
-                  const url = `https://crm.1000curve.com/Race?${params.toString()}`;
-                  const response = await fetch(url, { method: 'GET', headers });
-                  const text = await response.text();
-                  const data = JSON.parse(text);
-                  return { ...race, raceName: data.name || race.raceSlug };
-                } catch (error) {
-                  console.error('Errore caricamento nome gara:', error);
-                  return { ...race, raceName: race.raceSlug };
-                }
-              })
-            );
-            setCompletedRaces(racesWithNames);
-          }
         } else {
           router.replace('/');
         }
       } catch (error) {
         console.error('Errore nel caricamento dati:', error);
         router.replace('/');
-      } finally {
-        setLoading(false);
       }
     };
-    loadData();
+    loadUserData();
   }, []);
 
   const handleSidebarOpen = () => {
@@ -85,6 +44,11 @@ export default function MyRacesScreen() {
 
   const handleSidebarClose = () => {
     setIsSidebarVisible(false);
+  };
+
+  const handleLogoPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/off-run');
   };
 
   const handleLogout = async () => {
@@ -101,7 +65,7 @@ export default function MyRacesScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.removeItem('offRunUserData');
+              await AsyncStorage.removeItem('offRunAuth');
               router.replace('/');
             } catch (error) {
               console.error('Errore durante il logout:', error);
@@ -210,7 +174,8 @@ export default function MyRacesScreen() {
       <RaceHeader 
         pilotName={userInfo.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''} 
         onSidebarPress={handleSidebarOpen} 
-        onLogoutPress={handleLogout} 
+        onLogoutPress={handleLogout}
+        onLogoPress={handleLogoPress}
       />
       
       <View style={styles.contentContainer}>
@@ -230,7 +195,7 @@ export default function MyRacesScreen() {
           <View style={styles.emptyContainer}>
             <Icon name="trophy" size={48} color="#ccc" />
             <ThemedText style={styles.emptyText} allowFontScaling={false}>
-              Nessuna gara completata ancora
+              Nessuna gara disponibile
             </ThemedText>
           </View>
         ) : loading ? (

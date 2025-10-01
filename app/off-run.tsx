@@ -2,6 +2,7 @@ import RaceHeader from '@/components/RaceHeader';
 import Sidebar from '@/components/Sidebar';
 import { ThemedText } from '@/components/ThemedText';
 import YellowGradientBackground from '@/components/YellowGradientBackground';
+import { useCompletedRaces } from '@/hooks/useCompletedRaces';
 import { clearOffRunAuthData, getOffRunAuthData } from '@/utils/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, useRouter } from 'expo-router';
@@ -17,19 +18,7 @@ export default function OffRunScreen() {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
-  const [loadingSummary, setLoadingSummary] = useState(true);
-  const [totalCurves, setTotalCurves] = useState<number>(0);
-  const [totalRaces, setTotalRaces] = useState<number>(0);
-  const [lastRace, setLastRace] = useState<null | {
-    name: string;
-    slug: string;
-    finishDate?: string;
-    startDate?: string;
-    pointsName?: string;
-    curves?: number;
-    racerId?: string;
-    clientId?: string;
-  }>(null);
+  const { totalCurves, totalRaces, lastRace, loading: loadingSummary } = useCompletedRaces();
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -37,8 +26,7 @@ export default function OffRunScreen() {
         const authData = await getOffRunAuthData();
         if (authData.isAuthenticated && authData.userData) {
           setUserInfo(authData.userData);
-          // Carica riepilogo
-          loadSummary();
+          // Carica riepilogo is now handled by the hook
 
           // Controlla se c'è una gara Off-Run attiva
           const sessionString = await AsyncStorage.getItem('raceSession');
@@ -65,123 +53,6 @@ export default function OffRunScreen() {
     };
     loadUserData();
   }, []);
-
-  // Utility: somma delle curve per una sessione completata
-  const getCurvesForSession = async (session: any): Promise<number> => {
-    try {
-      const params = new URLSearchParams({
-        action: 'get',
-        getAction: 'getRacerLocationTimes',
-        format: 'json',
-        id: String(session.id),
-        clientId: String(session.clientId),
-      });
-      const url = `https://crm.1000curve.com/Racer?${params.toString()}`;
-      const headers = {
-        'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW',
-        'Accept': 'application/json',
-      } as const;
-
-      const response = await fetch(url, { method: 'GET', headers });
-      const text = await response.text();
-      const data = JSON.parse(text);
-      if (!data?.raceLocationTimes) return 0;
-      const filtered = data.raceLocationTimes.filter((cookie: any) => {
-        const name = cookie.name?.toUpperCase() || '';
-        const code = String(cookie.code)?.toUpperCase() || '';
-        return !name.includes('START') && !name.includes('FINISH') && !code.includes('START') && !code.includes('FINISH');
-      });
-      return filtered
-        .filter((c: any) => !!c.done)
-        .reduce((sum: number, c: any) => sum + (Number(c.points) || 0), 0);
-    } catch (e) {
-      console.error('Errore nel recupero curve per sessione:', e);
-      return 0;
-    }
-  };
-
-  // Utility: dettagli gara (nome, pointsName)
-  const getRaceDetails = async (slug: string): Promise<{ name?: string; pointsName?: string } | null> => {
-    try {
-      const params = new URLSearchParams({ action: 'get', getAction: 'getRace', slug });
-      const url = `https://crm.1000curve.com/Race?${params.toString()}`;
-      const headers = { 'Api-Key': 'uWoNPe2rGF9cToGQh2MdQJWkBNsQhtrvV0GC6Fq0pyYAtGNdJLqc6iALiusdyWLVgV7bbW' } as const;
-      const response = await fetch(url, { method: 'GET', headers });
-      const text = await response.text();
-      const data = text ? JSON.parse(text) : null;
-      if (!data) return null;
-      return { name: data.name, pointsName: data.pointsName };
-    } catch (e) {
-      console.error('Errore nel recupero dettagli gara:', e);
-      return null;
-    }
-  };
-
-  // Carica il riepilogo: totale curve e ultima gara
-  const loadSummary = async () => {
-    setLoadingSummary(true);
-    try {
-      const completedString = await AsyncStorage.getItem('completedRaces');
-      const completed: any[] = completedString ? JSON.parse(completedString) : [];
-
-      if (!Array.isArray(completed) || completed.length === 0) {
-        setTotalCurves(0);
-        setTotalRaces(0);
-        setLastRace(null);
-        return;
-      }
-
-      // Ordina per data di fine (o start in fallback)
-      const byDate = [...completed].sort((a, b) => {
-        const ad = new Date(a.finishDate || a.startDate || 0).getTime();
-        const bd = new Date(b.finishDate || b.startDate || 0).getTime();
-        return bd - ad;
-      });
-
-      setTotalRaces(completed.length);
-
-      // Calcola totale complessivo in parallelo
-      const curvePromises = completed.map((s) => getCurvesForSession(s));
-      const curvesArr = await Promise.all(curvePromises);
-      const totalAll = curvesArr.reduce((acc, n) => acc + (n || 0), 0);
-      setTotalCurves(totalAll);
-
-      // Calcola tempo totale
-      const timePromises = completed.map(async (s) => {
-        const start = new Date(s.startDate).getTime();
-        const finish = new Date(s.finishDate).getTime();
-        return finish - start;
-      });
-      const timesArr = await Promise.all(timePromises);
-      const totalTimeMs = timesArr.reduce((acc, t) => acc + t, 0);
-
-      const latest = byDate[0];
-
-      // Dati ultima gara
-      const [latestCurve, raceInfo] = await Promise.all([
-        getCurvesForSession(latest),
-        latest?.raceSlug ? getRaceDetails(latest.raceSlug) : Promise.resolve(null),
-      ]);
-
-      setLastRace({
-        name: raceInfo?.name || latest?.raceSlug || 'Gara',
-        slug: latest?.raceSlug,
-        finishDate: latest?.finishDate,
-        startDate: latest?.startDate,
-        pointsName: raceInfo?.pointsName,
-        curves: latestCurve || 0,
-        racerId: latest?.id,
-        clientId: latest?.clientId,
-      });
-    } catch (e) {
-      console.error('Errore nel caricamento del riepilogo:', e);
-      setTotalCurves(0);
-      setTotalRaces(0);
-      setLastRace(null);
-    } finally {
-      setLoadingSummary(false);
-    }
-  };
 
   const handleSidebarOpen = () => {
     setIsSidebarVisible(true);

@@ -4,6 +4,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import YellowGradientBackground from '@/components/YellowGradientBackground';
 import { clearOffRunAuthData, getOffRunAuthData } from '@/utils/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -47,6 +49,8 @@ interface RaceDetails {
   raceLocationCombos: RaceLocationCombo[];
 }
 
+const FAVORITES_KEY = 'favorite_cookies';
+
 export default function RaceDetailsScreen() {
   const params = useLocalSearchParams();
   const raceSlug = params.raceSlug as string;
@@ -55,6 +59,7 @@ export default function RaceDetailsScreen() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [raceDetails, setRaceDetails] = useState<RaceDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Verifica se abbiamo il parametro raceSlug
@@ -71,6 +76,7 @@ export default function RaceDetailsScreen() {
           setUserInfo(authData.userData);
           // Carica i dettagli della gara dopo aver verificato l'autenticazione
           await loadRaceDetails();
+          await loadFavorites();
         } else {
           // Se non ci sono dati utente, torna al login
           router.replace('/');
@@ -129,6 +135,70 @@ export default function RaceDetailsScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadFavorites = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(FAVORITES_KEY);
+      if (stored) {
+        const parsedFavorites: any[] = JSON.parse(stored);
+        const favoriteKeys = new Set(parsedFavorites.map((fav) => `${fav.raceSlug}-${fav.code}`));
+        setFavorites(favoriteKeys);
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento preferiti:', error);
+    }
+  };
+
+  const toggleFavorite = async (location: RaceLocation) => {
+    if (!raceDetails) return;
+
+    const key = `${raceDetails.slug}-${location.code}`;
+    const isFavorite = favorites.has(key);
+
+    try {
+      let updatedFavorites: any[] = [];
+      const stored = await AsyncStorage.getItem(FAVORITES_KEY);
+      if (stored) {
+        updatedFavorites = JSON.parse(stored);
+      }
+
+      if (isFavorite) {
+        // Rimuovi dai preferiti
+        updatedFavorites = updatedFavorites.filter(fav => !(fav.raceSlug === raceDetails.slug && fav.code === location.code));
+        const newFavorites = new Set(favorites);
+        newFavorites.delete(key);
+        setFavorites(newFavorites);
+      } else {
+        // Aggiungi ai preferiti
+        const favoriteItem = {
+          raceSlug: raceDetails.slug,
+          raceName: raceDetails.name,
+          code: location.code,
+          name: location.name,
+          description: location.description,
+          points: location.points,
+          pointsName: raceDetails.pointsName,
+          address: location.address,
+        };
+        updatedFavorites.push(favoriteItem);
+        const newFavorites = new Set(favorites);
+        newFavorites.add(key);
+        setFavorites(newFavorites);
+        // Vibrazione quando si aggiunge ai preferiti
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+
+      await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(updatedFavorites));
+    } catch (error) {
+      console.error('Errore nel toggle preferito:', error);
+      Alert.alert('Errore', 'Impossibile aggiornare i preferiti');
+    }
+  };
+
+  const handleLogoPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/off-run');
   };
 
   const handleSidebarOpen = () => {
@@ -233,6 +303,7 @@ export default function RaceDetailsScreen() {
         pilotName={userInfo.firstname ? `${userInfo.firstname} ${userInfo.lastname}` : ''}
         onSidebarPress={handleSidebarOpen}
         onLogoutPress={handleLogout}
+        onLogoPress={handleLogoPress}
       />
 
       <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
@@ -355,6 +426,16 @@ export default function RaceDetailsScreen() {
                     {location.points} {raceDetails.pointsName || 'punti'}
                   </ThemedText>
                 </View>
+                <TouchableOpacity
+                  style={styles.favoriteButton}
+                  onPress={() => toggleFavorite(location)}
+                >
+                  <Icon
+                    name={favorites.has(`${raceDetails.slug}-${location.code}`) ? "heart" : "heart-o"}
+                    size={20}
+                    color={favorites.has(`${raceDetails.slug}-${location.code}`) ? "#F44336" : "#666"}
+                  />
+                </TouchableOpacity>
               </View>
               {location.description && (
                 <ThemedText style={styles.locationDescription} allowFontScaling={false}>
@@ -717,5 +798,8 @@ const styles = StyleSheet.create({
     color: '#022C43',
     marginLeft: 4,
     fontWeight: '600',
+  },
+  favoriteButton: {
+    padding: 8,
   },
 });

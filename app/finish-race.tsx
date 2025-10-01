@@ -166,7 +166,7 @@ export default function FinishRaceScreen() {
 
         // Registra il cookie FINISH
         if (finishLocationFromRace) {
-          const timestamp = Math.floor(Date.now() / 1000);
+          const timestamp = Date.now();
           const netState = await NetInfo.fetch();
           if (netState.isConnected) {
             const paramsSet = new URLSearchParams({
