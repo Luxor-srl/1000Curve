@@ -24,7 +24,31 @@ interface FavoriteCookie {
   };
 }
 
-const FAVORITES_KEY = 'favorite_cookies';
+const getFavoritesKey = (email: string) => `favorite_cookies_${email}`;
+const OLD_FAVORITES_KEY = 'favorite_cookies';
+
+// Funzione di migrazione: sposta i preferiti dalla vecchia chiave globale a quella personalizzata
+const migrateFavorites = async (email: string) => {
+  try {
+    const newKey = getFavoritesKey(email);
+    const existingData = await AsyncStorage.getItem(newKey);
+    
+    // Se l'utente ha già dati nella chiave personalizzata, non migrare
+    if (existingData) {
+      return;
+    }
+    
+    // Controlla se ci sono dati nella vecchia chiave globale
+    const oldData = await AsyncStorage.getItem(OLD_FAVORITES_KEY);
+    if (oldData) {
+      // Copia i dati dalla vecchia chiave alla nuova
+      await AsyncStorage.setItem(newKey, oldData);
+      console.log('Preferiti migrati dalla vecchia chiave globale');
+    }
+  } catch (error) {
+    console.error('Errore nella migrazione dei preferiti:', error);
+  }
+};
 
 export default function FavoriteCookiesScreen() {
   const router = useRouter();
@@ -39,7 +63,8 @@ export default function FavoriteCookiesScreen() {
         const authData = await getOffRunAuthData();
         if (authData.isAuthenticated && authData.userData) {
           setUserInfo(authData.userData);
-          await loadFavorites();
+          await migrateFavorites(authData.userData.email);
+          await loadFavorites(authData.userData.email);
         } else {
           router.replace('/');
         }
@@ -53,9 +78,9 @@ export default function FavoriteCookiesScreen() {
     loadUserData();
   }, [router]);
 
-  const loadFavorites = async () => {
+  const loadFavorites = async (email: string) => {
     try {
-      const stored = await AsyncStorage.getItem(FAVORITES_KEY);
+      const stored = await AsyncStorage.getItem(getFavoritesKey(email));
       if (stored) {
         const parsedFavorites = JSON.parse(stored);
         setFavorites(parsedFavorites);
@@ -66,10 +91,11 @@ export default function FavoriteCookiesScreen() {
   };
 
   const removeFavorite = async (raceSlug: string, code: string) => {
+    if (!userInfo?.email) return;
     try {
       const updatedFavorites = favorites.filter(fav => !(fav.raceSlug === raceSlug && fav.code === code));
       setFavorites(updatedFavorites);
-      await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(updatedFavorites));
+      await AsyncStorage.setItem(getFavoritesKey(userInfo.email), JSON.stringify(updatedFavorites));
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (error) {
       console.error('Errore nella rimozione del preferito:', error);

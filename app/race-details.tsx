@@ -49,7 +49,31 @@ interface RaceDetails {
   raceLocationCombos: RaceLocationCombo[];
 }
 
-const FAVORITES_KEY = 'favorite_cookies';
+const getFavoritesKey = (email: string) => `favorite_cookies_${email}`;
+const OLD_FAVORITES_KEY = 'favorite_cookies';
+
+// Funzione di migrazione: sposta i preferiti dalla vecchia chiave globale a quella personalizzata
+const migrateFavorites = async (email: string) => {
+  try {
+    const newKey = getFavoritesKey(email);
+    const existingData = await AsyncStorage.getItem(newKey);
+    
+    // Se l'utente ha già dati nella chiave personalizzata, non migrare
+    if (existingData) {
+      return;
+    }
+    
+    // Controlla se ci sono dati nella vecchia chiave globale
+    const oldData = await AsyncStorage.getItem(OLD_FAVORITES_KEY);
+    if (oldData) {
+      // Copia i dati dalla vecchia chiave alla nuova
+      await AsyncStorage.setItem(newKey, oldData);
+      console.log('Preferiti migrati dalla vecchia chiave globale');
+    }
+  } catch (error) {
+    console.error('Errore nella migrazione dei preferiti:', error);
+  }
+};
 
 export default function RaceDetailsScreen() {
   const params = useLocalSearchParams();
@@ -76,7 +100,8 @@ export default function RaceDetailsScreen() {
           setUserInfo(authData.userData);
           // Carica i dettagli della gara dopo aver verificato l'autenticazione
           await loadRaceDetails();
-          await loadFavorites();
+          await migrateFavorites(authData.userData.email);
+          await loadFavorites(authData.userData.email);
         } else {
           // Se non ci sono dati utente, torna al login
           router.replace('/');
@@ -137,9 +162,9 @@ export default function RaceDetailsScreen() {
     }
   };
 
-  const loadFavorites = async () => {
+  const loadFavorites = async (email: string) => {
     try {
-      const stored = await AsyncStorage.getItem(FAVORITES_KEY);
+      const stored = await AsyncStorage.getItem(getFavoritesKey(email));
       if (stored) {
         const parsedFavorites: any[] = JSON.parse(stored);
         const favoriteKeys = new Set(parsedFavorites.map((fav) => `${fav.raceSlug}-${fav.code}`));
@@ -151,14 +176,14 @@ export default function RaceDetailsScreen() {
   };
 
   const toggleFavorite = async (location: RaceLocation) => {
-    if (!raceDetails) return;
+    if (!raceDetails || !userInfo?.email) return;
 
     const key = `${raceDetails.slug}-${location.code}`;
     const isFavorite = favorites.has(key);
 
     try {
       let updatedFavorites: any[] = [];
-      const stored = await AsyncStorage.getItem(FAVORITES_KEY);
+      const stored = await AsyncStorage.getItem(getFavoritesKey(userInfo.email));
       if (stored) {
         updatedFavorites = JSON.parse(stored);
       }
@@ -189,7 +214,7 @@ export default function RaceDetailsScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
 
-      await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(updatedFavorites));
+      await AsyncStorage.setItem(getFavoritesKey(userInfo.email), JSON.stringify(updatedFavorites));
     } catch (error) {
       console.error('Errore nel toggle preferito:', error);
       Alert.alert('Errore', 'Impossibile aggiornare i preferiti');
