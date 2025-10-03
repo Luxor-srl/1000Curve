@@ -17,7 +17,7 @@ export default function LoginScreen() {
   const [todayRace, setTodayRace] = useState<any>(null);
   const [loadingRace, setLoadingRace] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [mode, setMode] = useState<'off-run' | 'run'>('run'); // Stato per lo slider Off-Run / Run
+  const [mode, setMode] = useState<'off-run' | 'run'>('off-run'); // Stato per lo slider Off-Run / Run
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [regUsername, setRegUsername] = useState('');
   const [regPassword, setRegPassword] = useState('');
