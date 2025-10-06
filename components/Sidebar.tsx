@@ -85,15 +85,10 @@ export default function Sidebar({ isVisible, onClose }: SidebarProps) {
             <ThemedText style={styles.menuText}>Lista delle Run</ThemedText>
           </TouchableOpacity>
 
-          <View style={styles.comingSoonItem}>
-            <Ionicons name="podium-outline" size={20} color="#666" style={styles.menuIcon} />
-            <ThemedText style={styles.comingSoonText}>Classifiche</ThemedText>
-          </View>
-
-          <View style={styles.comingSoonItem}>
-            <Ionicons name="person-outline" size={20} color="#666" style={styles.menuIcon} />
-            <ThemedText style={styles.comingSoonText}>Il mio profilo</ThemedText>
-          </View>
+          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onClose(); router.push('/profile'); }}>
+            <Ionicons name="person-outline" size={20} color="#000" style={styles.menuIcon} />
+            <ThemedText style={styles.menuText}>Il mio profilo</ThemedText>
+          </TouchableOpacity>
         </View>
       </Animated.View>
     </Animated.View>

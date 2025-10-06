@@ -341,21 +341,27 @@ export default function RaceDetailsScreen() {
             </ThemedText>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.startButton} onPress={() => {
-            router.push({
-              pathname: '/start-race',
-              params: {
-                raceSlug: raceDetails.slug,
-                raceName: raceDetails.name,
-                startLocation: JSON.stringify(raceDetails.offRunStartAddress)
-              }
-            });
-          }}>
-            <ThemedText style={styles.startButtonText} allowFontScaling={false}>
-              Inizia la gara
-            </ThemedText>
-            <Icon name="play" size={16} color="#022C43" />
-          </TouchableOpacity>
+          {/* Mostra il pulsante solo se ci sono coordinate di inizio e fine */}
+          {raceDetails.offRunStartAddress?.latitude && 
+           raceDetails.offRunStartAddress?.longitude && 
+           raceDetails.offRunFinishAddress?.latitude && 
+           raceDetails.offRunFinishAddress?.longitude && (
+            <TouchableOpacity style={styles.startButton} onPress={() => {
+              router.push({
+                pathname: '/start-race',
+                params: {
+                  raceSlug: raceDetails.slug,
+                  raceName: raceDetails.name,
+                  startLocation: JSON.stringify(raceDetails.offRunStartAddress)
+                }
+              });
+            }}>
+              <ThemedText style={styles.startButtonText} allowFontScaling={false}>
+                Inizia la gara
+              </ThemedText>
+              <Icon name="play" size={16} color="#022C43" />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Header della gara */}

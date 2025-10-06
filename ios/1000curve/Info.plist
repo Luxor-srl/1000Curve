@@ -47,21 +47,13 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
-    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>Abbiamo bisogno della tua posizione anche in background per fornire aggiornamenti continui.</string>
-    <key>NSLocationAlwaysUsageDescription</key>
-    <string>Abbiamo bisogno della tua posizione sempre per garantire il corretto funzionamento dell'app.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Abbiamo bisogno della tua posizione per mostrare la tua posizione sulla mappa e fornire funzionalità di tracciamento.</string>
+    <string>Abbiamo bisogno della tua posizione per mostrare la tua posizione sulla mappa e fornire funzionalità di tracciamento durante la gara.</string>
     <key>NSMotionUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your device motion</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
-    </array>
-    <key>UIBackgroundModes</key>
-    <array>
-      <string>location</string>
     </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>

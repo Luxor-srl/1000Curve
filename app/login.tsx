@@ -145,10 +145,16 @@ export default function LoginScreen() {
         };
         console.log('Chiamata API /Racer:', { urlRacer, method: 'GET', headers });
         const responseRacer = await fetch(urlRacer, { method: 'GET', headers });
+        console.log('Response Status /Racer:', responseRacer.status);
+        console.log('Response Headers /Racer:', JSON.stringify(Object.fromEntries(responseRacer.headers.entries())));
+        
         let textRacer = await responseRacer.text();
+        console.log('Response Text /Racer:', textRacer);
+        
         let dataRacer;
         try {
           dataRacer = textRacer ? JSON.parse(textRacer) : null;
+          console.log('Response Parsed /Racer:', JSON.stringify(dataRacer, null, 2));
         } catch (parseError) {
           console.error('Errore di parsing JSON /Racer:', parseError, 'Risposta ricevuta:', textRacer);
           dataRacer = { error: 'Risposta non in formato JSON', raw: textRacer };
